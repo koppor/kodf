@@ -1,0 +1,50 @@
+plugins {
+  id 'java'
+  id 'application'
+  id 'com.github.sherter.google-java-format' version '0.8'
+  id "io.freefair.lombok" version "5.0.0-rc6"
+}
+
+repositories {
+  jcenter()
+}
+
+group = "io.github.koppor"
+version = '0.1.0-dev'
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_14
+  targetCompatibility = JavaVersion.VERSION_14
+}
+
+dependencies {
+  implementation 'com.google.guava:guava:28.2-jre'
+  implementation 'org.eclipse.collections:eclipse-collections-api:10.2.0'
+  implementation 'org.eclipse.collections:eclipse-collections:10.2.0'
+  implementation 'com.google.code.gson:gson:2.8.6'
+  implementation 'org.tinylog:tinylog-api:2.1.1'
+  implementation 'org.tinylog:tinylog-impl:2.1.1'
+
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+}
+
+application {
+  mainClassName = 'io.github.koppor.kodf.App'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+}
+
+javadoc {
+  options {
+    encoding = 'UTF-8'
+    version = true
+    author = true
+  }
+}
