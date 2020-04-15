@@ -1,8 +1,5 @@
 package io.github.koppor.kodf.typeadapters;
 
-import java.lang.reflect.Type;
-import java.nio.file.Path;
-
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -10,6 +7,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import java.lang.reflect.Type;
+import java.nio.file.Path;
 
 public class PathTypeAdapter implements JsonSerializer<Path>, JsonDeserializer<Path> {
 
@@ -19,7 +18,8 @@ public class PathTypeAdapter implements JsonSerializer<Path>, JsonDeserializer<P
   }
 
   @Override
-  public Path deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+  public Path deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+      throws JsonParseException {
     return Path.of(json.getAsString());
   }
 }

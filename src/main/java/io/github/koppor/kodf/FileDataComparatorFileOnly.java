@@ -2,8 +2,6 @@ package io.github.koppor.kodf;
 
 import java.util.Comparator;
 
-import org.tinylog.Logger;
-
 public class FileDataComparatorFileOnly implements Comparator<FileData> {
 
   @Override

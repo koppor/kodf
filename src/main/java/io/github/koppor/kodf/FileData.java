@@ -1,32 +1,30 @@
 package io.github.koppor.kodf;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
+import java.io.IOException;
+import java.nio.file.Path;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Value;
 import lombok.experimental.Accessors;
 import org.tinylog.Logger;
 
 @Builder
+@Value
 @Accessors(fluent = true)
 public class FileData {
 
   @Getter private final Path file;
-  @Getter(lazy = true) private final HashCode hashValue = calculateHashCode();
-  @Getter(lazy = true) private final Long size = determineFileSize();
 
-  private Long determineFileSize() {
-    try {
-      return java.nio.file.Files.size(file);
-    } catch (IOException e) {
-      Logger.error(e, "Could not determine file size for {}", file);
-      return -1L;
-    }
-  }
+  @Getter(lazy = true)
+  private final Path dir = determineDirectory();
+
+  @Getter private final Long size;
+
+  @Getter(lazy = true)
+  private final HashCode hashValue = calculateHashCode();
 
   private HashCode calculateHashCode() {
     HashCode result;
@@ -37,5 +35,9 @@ public class FileData {
       result = HashCode.fromInt(-1);
     }
     return result;
+  }
+
+  private Path determineDirectory() {
+    return file.getParent();
   }
 }

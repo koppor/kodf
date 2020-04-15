@@ -1,5 +1,17 @@
 # Kopp Duplicate Finder
 
+Finds duplicate files in different directories.
+
+- Inspired by [FastDuplicateFinder](https://github.com/carlbeech/fast-duplicate-finder)
+- (Currently) more code-oriented
+- Less UI than [dupeGuru](https://dupeguru.voltaicideas.net/)
+
+Distinguishing feature:
+
+- **Diretory subset identification**.
+  Sometimes, a file-based backup is made to different places on the NAS.
+  As user, I want to know if a directory can be completely erased.
+
 ## Development
 
 - To format the code `./gradlew googleJavaFormat`
