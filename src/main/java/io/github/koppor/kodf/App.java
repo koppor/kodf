@@ -9,15 +9,19 @@ public class App {
 
   public static void main(String[] args) {
     DuplicateChecker duplicateChecker =
-        new DuplicateChecker(
-            Sets.immutable.of(
-                Path.of("C:\\TEMP\\testdup\\dira"), Path.of("C:\\TEMP\\testdup\\dirb")));
+        DuplicateChecker.builder()
+            .pathsToScan(
+              Sets.immutable.of(
+                Path.of("C:\\TEMP\\testdup\\dira"), Path.of("C:\\TEMP\\testdup\\dirb")))
+            .build();
 
     duplicateChecker.checkDuplicates();
 
     duplicateChecker
         .getPathSubSetOf()
-        .forEachKey(
+        .keyBag()
+        .toSortedList()
+        .forEach(
             path -> {
               StringBuilder stringBuilder = new StringBuilder();
               stringBuilder.append(path.toString());

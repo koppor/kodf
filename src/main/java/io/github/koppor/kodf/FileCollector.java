@@ -8,14 +8,17 @@ import java.nio.file.attribute.BasicFileAttributes;
 import lombok.RequiredArgsConstructor;
 import me.tongfei.progressbar.ProgressBar;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.tinylog.Logger;
 
+/** Collects all non-empty directories. Ignores given directories */
 @RequiredArgsConstructor
 public class FileCollector implements FileVisitor<Path> {
 
   private final MutableMap<Path, DirData> pathToDirData;
   private final MutableSet<FileData> allFiles;
+  private final ImmutableSet<Path> pathsToIgnore;
   private final ProgressBar progressBar;
 
   private DirData currentDirectory;
@@ -24,9 +27,12 @@ public class FileCollector implements FileVisitor<Path> {
   public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
     Logger.debug("Visiting {}...", dir.toString());
     currentDirectory = new DirData(dir);
-    pathToDirData.put(dir, currentDirectory);
     progressBar.step();
     progressBar.setExtraMessage(dir.toString());
+    if (pathsToIgnore.contains(dir)) {
+      Logger.debug("Ignoring directory");
+      return FileVisitResult.SKIP_SUBTREE;
+    }
     return FileVisitResult.CONTINUE;
   }
 
@@ -49,6 +55,12 @@ public class FileCollector implements FileVisitor<Path> {
 
   @Override
   public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+    if (allFiles.isEmpty()) {
+      return FileVisitResult.CONTINUE;
+    }
+
+    // only collect non-empy directories
+    pathToDirData.put(dir, currentDirectory);
     return FileVisitResult.CONTINUE;
   }
 }

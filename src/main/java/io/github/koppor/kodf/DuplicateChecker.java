@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import me.tongfei.progressbar.ProgressBar;
 import org.eclipse.collections.api.collection.MutableCollection;
@@ -20,20 +21,24 @@ import org.eclipse.collections.impl.multimap.list.FastListMultimap;
 import org.eclipse.collections.impl.multimap.set.SynchronizedPutUnifiedSetMultimap;
 import org.tinylog.Logger;
 
+@Builder
 @RequiredArgsConstructor
 public class DuplicateChecker {
 
-  public final ImmutableSet<Path> pathsToScan;
-  public final ImmutableSet<Path> pathsToKeep = Sets.immutable.empty();
+  private final ImmutableSet<Path> pathsToScan;
 
-  private MutableMultimap<Path, Path> pathSubSetOf;
+  @Builder.Default private final ImmutableSet<Path> pathsToKeep = Sets.immutable.empty();
+
+  @Builder.Default private final ImmutableSet<Path> pathsToIgnore = Sets.immutable.empty();
+
+  private MutableMultimap<Path, Path> $pathSubSetOf;
 
   public ImmutableMultimap<Path, Path> getPathSubSetOf() {
-    return pathSubSetOf.toImmutable();
+    return $pathSubSetOf.toImmutable();
   }
 
   public void checkDuplicates() {
-    pathSubSetOf = FastListMultimap.newMultimap();
+    $pathSubSetOf = FastListMultimap.newMultimap();
 
     MutableMap<Path, DirData> pathToDirData = Maps.mutable.empty();
     MutableSet<FileData> allFiles = Sets.mutable.empty();
@@ -46,16 +51,12 @@ public class DuplicateChecker {
       pathsToScan.forEach(
           root -> {
             try {
-              Files.walkFileTree(root, new FileCollector(pathToDirData, allFiles, progressBar));
+              Files.walkFileTree(root, new FileCollector(pathToDirData, allFiles, pathsToIgnore, progressBar));
             } catch (IOException e) {
               Logger.error(e, "Could not visit {}", root);
             }
           });
     }
-
-    // collect non-empty directories
-    MutableMap<Path, DirData> nonEmptyPathToDirData =
-        pathToDirData.reject((path, dirData) -> dirData.files.isEmpty());
 
     // fill sizeToDirData
     MutableSetMultimap<Long, DirData> sizeToDirData =
@@ -64,7 +65,7 @@ public class DuplicateChecker {
         .parallelStream()
         .forEach(
             fileData ->
-                sizeToDirData.put(fileData.size(), nonEmptyPathToDirData.get(fileData.dir())));
+                sizeToDirData.put(fileData.size(), pathToDirData.get(fileData.dir())));
 
     // determine map from size to set of DirData (which are candidates from the view of the size)
     MutableSetMultimap<Long, DirData> sizeCandiates =
@@ -80,9 +81,9 @@ public class DuplicateChecker {
     // equal
 
     try (ProgressBar progressBar =
-        new ProgressBar("Compare directories", nonEmptyPathToDirData.size())) {
+        new ProgressBar("Compare directories", pathToDirData.size())) {
       // check each path if it is fully contained
-      nonEmptyPathToDirData.forEachKeyValue(
+      pathToDirData.forEachKeyValue(
           (path, dirData) -> {
             Logger.debug("Checking {}...", path);
             Iterator<FileData> fileDataIterator = dirData.files.iterator();
@@ -132,7 +133,7 @@ public class DuplicateChecker {
                 DirDataSetFormatter.format(allDirsWhereAllFileSizesAppear));
 
             // collect result
-            pathSubSetOf.putAll(path, allDirsWhereAllFileSizesAppear.collect(x -> x.dir()));
+            $pathSubSetOf.putAll(path, allDirsWhereAllFileSizesAppear.collect(x -> x.dir()));
 
             progressBar.step();
           });
