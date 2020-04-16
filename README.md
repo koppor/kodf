@@ -21,6 +21,11 @@ Distinguishing feature:
 - To format the code `./gradlew googleJavaFormat`
 - We rely on [Project Lombok](https://projectlombok.org/)
 - Create an executable by invoking `gradlew runtime`. It will generate the `build/image` directory.
+- Build linux image on Windows
+
+  1. docker run --rm -it -v c:\git-repositories\kodf:/tmp/kodf openjdk:14-jdk bash
+  2. cd /tmp/kodf
+  3. ./gradlew runtimeImage
 
 ### Development Setup
 
