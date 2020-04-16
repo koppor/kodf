@@ -51,7 +51,8 @@ public class DuplicateChecker {
       pathsToScan.forEach(
           root -> {
             try {
-              Files.walkFileTree(root, new FileCollector(pathToDirData, allFiles, pathsToIgnore, progressBar));
+              Files.walkFileTree(
+                  root, new FileCollector(pathToDirData, allFiles, pathsToIgnore, progressBar));
             } catch (IOException e) {
               Logger.error(e, "Could not visit {}", root);
             }
@@ -63,9 +64,7 @@ public class DuplicateChecker {
         SynchronizedPutUnifiedSetMultimap.newMultimap();
     allFiles
         .parallelStream()
-        .forEach(
-            fileData ->
-                sizeToDirData.put(fileData.size(), pathToDirData.get(fileData.dir())));
+        .forEach(fileData -> sizeToDirData.put(fileData.size(), pathToDirData.get(fileData.dir())));
 
     // determine map from size to set of DirData (which are candidates from the view of the size)
     MutableSetMultimap<Long, DirData> sizeCandiates =
@@ -80,8 +79,7 @@ public class DuplicateChecker {
     // TODO: a bit conservative: a directory is a "subset" if the amount of files is also less or
     // equal
 
-    try (ProgressBar progressBar =
-        new ProgressBar("Compare directories", pathToDirData.size())) {
+    try (ProgressBar progressBar = new ProgressBar("Compare directories", pathToDirData.size())) {
       // check each path if it is fully contained
       pathToDirData.forEachKeyValue(
           (path, dirData) -> {
