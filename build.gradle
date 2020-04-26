@@ -20,12 +20,27 @@ java {
 
 dependencies {
   implementation 'com.google.guava:guava:28.2-jre'
+
+  // https://www.eclipse.org/collections/
   implementation 'org.eclipse.collections:eclipse-collections-api:10.2.0'
   implementation 'org.eclipse.collections:eclipse-collections:10.2.0'
+
   implementation 'com.google.code.gson:gson:2.8.6'
+
   implementation 'org.tinylog:tinylog-api:2.1.1'
   implementation 'org.tinylog:tinylog-impl:2.1.1'
+
   implementation 'me.tongfei:progressbar:0.8.1'
+
+  implementation 'org.apache.commons:commons-text:1.8'
+
+  // https://picocli.info/
+  implementation 'info.picocli:picocli:4.2.0'
+  // required for GraalVM native image
+  annotationProcessor 'info.picocli:picocli-codegen:4.2.0'
+
+  // https://github.com/google/jimfs
+  testImplementation 'com.google.jimfs:jimfs:1.1'
 
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
@@ -53,4 +68,9 @@ javadoc {
 
 runtime {
   options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+}
+
+compileJava {
+  // enable the annotation processor - required by picoli and GraalVM native image
+  options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
 }

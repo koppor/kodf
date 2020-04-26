@@ -4,15 +4,29 @@ import java.nio.file.Path;
 import java.util.stream.Collectors;
 import org.eclipse.collections.api.factory.Sets;
 import org.tinylog.Logger;
+import picocli.CommandLine;
 
 public class App {
 
+  @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
+  private boolean usageHelpRequested = false;
+
   public static void main(String[] args) {
+    App app = CommandLine.populateCommand(new App(), args);
+    if (app.usageHelpRequested) {
+      CommandLine.usage(new App(), System.out);
+      return;
+    }
+
+    /*
     DuplicateChecker duplicateChecker =
         DuplicateChecker.builder()
             .pathsToScan(
-              Sets.immutable.of(
-                Path.of("C:\\TEMP\\testdup\\dira"), Path.of("C:\\TEMP\\testdup\\dirb")))
+                Sets.immutable.of(Path.of("C:\\git-repositories\\MyLibreLab")))
+            .pathsToIgnore(
+                Sets.immutable.of(
+                    Path.of("/volume1/homes/alina/#recycle"),
+                    Path.of("/volume1/homes/photo/#recycle")))
             .build();
 
     duplicateChecker.checkDuplicates();
@@ -38,5 +52,7 @@ public class App {
               Logger.debug("Superdirs: {}", output);
               System.out.println(output);
             });
+
+     */
   }
 }

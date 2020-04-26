@@ -1,4 +1,4 @@
-package io.github.koppor.kodf;
+package io.github.koppor.kodf.database;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,13 +18,13 @@ class FileDataTest {
   @Test
   void hashValue() throws Exception {
     Path tempFile = Files.createTempFile("kodf", "tmp");
-    FileData fileData = new FileData(tempFile);
+    FileData fileData = FileData.of(tempFile, 0L);
     assertEquals(HashCode.fromInt(0), fileData.hashValue());
   }
 
   @Test
   void fileDataCanBeSerialized() {
-    FileData test = new FileData(Path.of("test"));
+    FileData test = FileData.of(Path.of("test"), 0L);
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Path.class, new PathTypeAdapter())

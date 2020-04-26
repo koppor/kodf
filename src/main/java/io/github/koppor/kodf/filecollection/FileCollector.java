@@ -1,10 +1,13 @@
-package io.github.koppor.kodf;
+package io.github.koppor.kodf.filecollection;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+
+import io.github.koppor.kodf.database.DirData;
+import io.github.koppor.kodf.database.FileData;
 import lombok.RequiredArgsConstructor;
 import me.tongfei.progressbar.ProgressBar;
 import org.eclipse.collections.api.map.MutableMap;
@@ -41,7 +44,7 @@ public class FileCollector implements FileVisitor<Path> {
     if (!attrs.isRegularFile()) {
       return FileVisitResult.CONTINUE;
     }
-    FileData fileData = new FileData(file, attrs.size());
+    FileData fileData = FileData.of(file, attrs.size());
     currentDirectory.files.add(fileData);
     allFiles.add(fileData);
     return FileVisitResult.CONTINUE;

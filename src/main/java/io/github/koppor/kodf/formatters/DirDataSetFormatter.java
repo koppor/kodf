@@ -1,6 +1,6 @@
 package io.github.koppor.kodf.formatters;
 
-import io.github.koppor.kodf.DirData;
+import io.github.koppor.kodf.database.DirData;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;

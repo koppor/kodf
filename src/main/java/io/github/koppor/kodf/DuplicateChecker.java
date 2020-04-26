@@ -1,5 +1,8 @@
 package io.github.koppor.kodf;
 
+import io.github.koppor.kodf.database.DirData;
+import io.github.koppor.kodf.database.FileData;
+import io.github.koppor.kodf.filecollection.FileCollector;
 import io.github.koppor.kodf.formatters.DirDataSetFormatter;
 import java.io.IOException;
 import java.nio.file.Files;

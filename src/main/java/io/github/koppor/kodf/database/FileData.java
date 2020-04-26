@@ -1,4 +1,4 @@
-package io.github.koppor.kodf;
+package io.github.koppor.kodf.database;
 
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import org.tinylog.Logger;
 
 @Builder
+@RequiredArgsConstructor(staticName = "of")
 @Value
 @Accessors(fluent = true)
 public class FileData {

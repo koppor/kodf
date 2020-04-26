@@ -1,7 +1,9 @@
-package io.github.koppor.kodf;
+package io.github.koppor.kodf.database;
 
 import com.google.common.hash.HashCode;
 import java.nio.file.Path;
+
+import io.github.koppor.kodf.database.FileData;
 import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.Accessors;
