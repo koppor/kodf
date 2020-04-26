@@ -1,4 +1,4 @@
-# Kopp Duplicate Finder
+# Koppor's Duplicate Finder
 
 Finds duplicate files in different directories.
 
