@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.jgrapht.Graph;
 import io.github.koppor.kodf.database.DirData;
 import io.github.koppor.kodf.database.FileData;
 import io.github.koppor.kodf.filecollection.FileCollector;
@@ -16,18 +17,17 @@ import lombok.Singular;
 import me.tongfei.progressbar.DelegatingProgressBarConsumer;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
-import me.tongfei.progressbar.ProgressBarConsumer;
 import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.ImmutableMultimap;
-import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.multimap.set.MutableSetMultimap;
-import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.multimap.set.SynchronizedPutUnifiedSetMultimap;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 import org.tinylog.Logger;
 
 @Builder
@@ -46,17 +46,17 @@ public class DuplicateChecker {
   @Singular("pathToIgnore")
   private final Set<Path> pathsToIgnore;
 
-  private MutableMultimap<Path, Path> $pathSubSetOf;
+  private Graph<Path, Path> $pathRelation;
 
   /**
    * @return a map from a path to the set of paths where this path is a s subset of
    */
-  public ImmutableMultimap<Path, Path> getPathSubSetOf() {
-    return $pathSubSetOf.toImmutable();
+  public Graph<Path, Path> getPathRelation() {
+    return $pathRelation;
   }
 
   public void checkDuplicates() {
-    $pathSubSetOf = Multimaps.mutable.list.empty();
+    $pathRelation = new DefaultDirectedGraph(DefaultEdge.class);
 
     MutableMap<Path, DirData> pathToDirData = Maps.mutable.empty();
     MutableSet<FileData> allFiles = Sets.mutable.empty();
@@ -104,7 +104,9 @@ public class DuplicateChecker {
     // equal
 
     // try (ProgressBar progressBar = new ProgressBar("Compare directories", pathToDirData.size())) {
+
     // check each path if it is fully contained
+    // prototype: quadratic effort
     pathToDirData.forEachKeyValue(
       (path, dirData) -> {
         Logger.debug("Checking {}...", path);
@@ -161,7 +163,11 @@ public class DuplicateChecker {
 
         if (!allDirsWhereAllFileSizesAppear.isEmpty()) {
           // collect result
-          $pathSubSetOf.putAll(path, allDirsWhereAllFileSizesAppear.collect(x -> x.dir()));
+          $pathRelation.addVertex(path);
+          allDirsWhereAllFileSizesAppear.stream().map(x -> x.dir()).forEach(parentPath -> {
+            $pathRelation.addVertex(parentPath);
+            $pathRelation.addEdge(parentPath, path);
+          });
         }
 
         // progressBar.step();

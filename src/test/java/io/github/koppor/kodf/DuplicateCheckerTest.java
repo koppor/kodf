@@ -8,14 +8,11 @@ import java.util.List;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import io.github.koppor.kodf.DuplicateChecker;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.multimap.ImmutableMultimap;
-import org.eclipse.collections.api.multimap.MutableMultimap;
-import org.eclipse.collections.api.multimap.list.MutableListMultimap;
-import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.multimap.list.FastListMultimap;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,8 +48,11 @@ class DuplicateCheckerTest {
     DuplicateChecker duplicateChecker = DuplicateChecker.builder().pathToScan(dirX).pathToScan(dirY).build();
     duplicateChecker.checkDuplicates();
 
-    ImmutableMultimap<Path, Path> expected = Multimaps.mutable.list.with(dirX, dirY).toImmutable();
+    Graph expected = new DefaultDirectedGraph(DefaultEdge.class);
+    expected.addVertex(dirX);
+    expected.addVertex(dirY);
+    expected.addEdge(dirY, dirY);
 
-    assertEquals(expected, duplicateChecker.getPathSubSetOf());
+    assertEquals(expected, duplicateChecker.getPathRelation());
   }
 }
