@@ -13,7 +13,10 @@ import io.github.koppor.kodf.formatters.DirDataSetFormatter;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.Singular;
+import me.tongfei.progressbar.DelegatingProgressBarConsumer;
 import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarConsumer;
 import org.eclipse.collections.api.collection.MutableCollection;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
@@ -62,7 +65,12 @@ public class DuplicateChecker {
     // provided 100 instead of -1, because of Exception in thread
     // "me.tongfei.progressbar.ProgressBar" java.lang.ArithmeticException: / by zero at
     // me.tongfei.progressbar.DefaultProgressBarRenderer.render(DefaultProgressBarRenderer.java:96)
-    try (ProgressBar progressBar = new ProgressBar("Collect all files", 100)) {
+    try (ProgressBar progressBar = new ProgressBarBuilder()
+      .setTaskName("Collect all files")
+      .setInitialMax(100L)
+      .setConsumer(new DelegatingProgressBarConsumer(x -> {}))
+      .build();
+    ) {
       pathsToScan.forEach(
         root -> {
           try {
@@ -82,7 +90,8 @@ public class DuplicateChecker {
       .forEach(fileData -> sizeToDirData.put(fileData.size(), pathToDirData.get(fileData.dir())));
 
     // determine map from size to set of DirData (which are candidates from the view of the size)
-    MutableSetMultimap<Long, DirData> sizeCandiates =
+    // After that, we know which file sizes appear in which directories
+    MutableSetMultimap<Long, DirData> sizeCandidates =
       sizeToDirData.rejectKeysMultiValues(
         (size, dirDataIterable) -> {
           Iterator<DirData> iterator = dirDataIterable.iterator();
@@ -94,63 +103,69 @@ public class DuplicateChecker {
     // TODO: a bit conservative: a directory is a "subset" if the amount of files is also less or
     // equal
 
-    try (ProgressBar progressBar = new ProgressBar("Compare directories", pathToDirData.size())) {
-      // check each path if it is fully contained
-      pathToDirData.forEachKeyValue(
-        (path, dirData) -> {
-          Logger.debug("Checking {}...", path);
-          Iterator<FileData> fileDataIterator = dirData.files.iterator();
-          assert fileDataIterator.hasNext();
-          FileData firstFileData = fileDataIterator.next();
-          MutableSet<DirData> allDirsWhereAllFileSizesAppear =
-            sizeCandiates.get(firstFileData.size()).toSet();
-          // directory itself is not a candidate for other (!) directory
-          allDirsWhereAllFileSizesAppear.remove(pathToDirData.get(path));
-          // search through all files
-          while (fileDataIterator.hasNext() && !allDirsWhereAllFileSizesAppear.isEmpty()) {
-            FileData currentFileData = fileDataIterator.next();
-            MutableSet<DirData> dirDataOfCurrentFile = sizeCandiates.get(currentFileData.size());
-            allDirsWhereAllFileSizesAppear =
-              allDirsWhereAllFileSizesAppear.intersect(dirDataOfCurrentFile);
-          }
-          if (allDirsWhereAllFileSizesAppear.isEmpty()) {
-            // no common directories found
-            return;
-          }
+    // try (ProgressBar progressBar = new ProgressBar("Compare directories", pathToDirData.size())) {
+    // check each path if it is fully contained
+    pathToDirData.forEachKeyValue(
+      (path, dirData) -> {
+        Logger.debug("Checking {}...", path);
+        Iterator<FileData> fileDataIterator = dirData.files.iterator();
+        assert fileDataIterator.hasNext();
 
-          Logger.debug(
-            "Directories where {} is contained (size match): {}",
-            path,
-            DirDataSetFormatter.format(allDirsWhereAllFileSizesAppear));
+        // candidates for superset directories are all directories containing the first file
+        FileData firstFileData = fileDataIterator.next();
+        MutableSet<DirData> allDirsWhereAllFileSizesAppear =
+          sizeCandidates.get(firstFileData.size()).toSet();
 
-          // checksum-based matching
+        // directory itself is not a candidate for other (!) directory
+        allDirsWhereAllFileSizesAppear.remove(pathToDirData.get(path));
 
-          allDirsWhereAllFileSizesAppear.reject(
-            otherDirData -> {
-              Iterator<FileData> thisFileDataIterator = dirData.files.iterator();
-              boolean hashMatch;
-              do
-              {
-                FileData thisFileData = thisFileDataIterator.next();
-                MutableCollection<FileData> otherFileDataHavingMatchingHashes =
-                  otherDirData.hashCodeToFileData().get(thisFileData.hashValue());
-                hashMatch =
-                  otherFileDataHavingMatchingHashes.anySatisfy(
-                    eqFileData -> eqFileData.size().equals(thisFileData.size()));
-              } while (hashMatch && thisFileDataIterator.hasNext());
-              return !hashMatch;
-            });
+        // search through all other files
+        while (fileDataIterator.hasNext() && !allDirsWhereAllFileSizesAppear.isEmpty()) {
+          FileData currentFileData = fileDataIterator.next();
+          MutableSet<DirData> dirDataOfCurrentFile = sizeCandidates.get(currentFileData.size());
+          allDirsWhereAllFileSizesAppear =
+            allDirsWhereAllFileSizesAppear.intersect(dirDataOfCurrentFile);
+        }
+        if (allDirsWhereAllFileSizesAppear.isEmpty()) {
+          // no common directories found
+          return;
+        }
 
-          Logger.debug(
-            "Directories where {} is contained: {}",
-            path,
-            DirDataSetFormatter.format(allDirsWhereAllFileSizesAppear));
+        Logger.debug(
+          "Directories where {} is contained (size match): {}",
+          path,
+          DirDataSetFormatter.format(allDirsWhereAllFileSizesAppear));
 
+        // checksum-based matching
+
+        allDirsWhereAllFileSizesAppear.reject(
+          otherDirData -> {
+            Iterator<FileData> thisFileDataIterator = dirData.files.iterator();
+            boolean hashMatch;
+            do
+            {
+              FileData thisFileData = thisFileDataIterator.next();
+              MutableCollection<FileData> otherFileDataHavingMatchingHashes =
+                otherDirData.hashCodeToFileData().get(thisFileData.hashValue());
+              hashMatch =
+                otherFileDataHavingMatchingHashes.anySatisfy(
+                  eqFileData -> eqFileData.size().equals(thisFileData.size()));
+            } while (hashMatch && thisFileDataIterator.hasNext());
+            return !hashMatch;
+          });
+
+        Logger.debug(
+          "Directories where {} is contained: {}",
+          path,
+          DirDataSetFormatter.format(allDirsWhereAllFileSizesAppear));
+
+        if (!allDirsWhereAllFileSizesAppear.isEmpty()) {
           // collect result
           $pathSubSetOf.putAll(path, allDirsWhereAllFileSizesAppear.collect(x -> x.dir()));
+        }
 
-          progressBar.step();
-        });
-    }
+        // progressBar.step();
+      });
+    //}
   }
 }

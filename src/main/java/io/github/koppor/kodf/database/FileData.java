@@ -1,10 +1,11 @@
 package io.github.koppor.kodf.database;
 
-import com.google.common.hash.HashCode;
-import com.google.common.hash.Hashing;
-import com.google.common.io.Files;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.CRC32;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,15 +27,24 @@ public class FileData {
   @Getter private final Long size;
 
   @Getter(lazy = true)
-  private final HashCode hashValue = calculateHashCode();
+  private final long hashValue = calculateHashCode();
 
-  private HashCode calculateHashCode() {
-    HashCode result;
-    try {
-      result = Files.asByteSource(file.toFile()).hash(Hashing.crc32());
+  private long calculateHashCode() {
+    long result;
+    final int SIZE = 16 * 1024;
+    byte[] bytes = new byte[SIZE];
+    CRC32 crc = new CRC32();
+
+    try (InputStream inputStream = Files.newInputStream(file)) {
+      int readBytesCount = inputStream.read(bytes);
+      while (readBytesCount > 0) {
+        crc.update(bytes, 0, readBytesCount);
+        readBytesCount = inputStream.read(bytes);
+      }
+      result = crc.getValue();
     } catch (IOException e) {
       Logger.error(e, "Could not hash {}", file);
-      result = HashCode.fromInt(-1);
+      result = -1L;
     }
     return result;
   }

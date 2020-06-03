@@ -37,7 +37,7 @@ class DuplicateCheckerTest {
     Path dirX = fs.getPath("/x");
     Files.createDirectory(dirX);
     Path dirY = fs.getPath("/y");
-    Files.createDirectory(dirX);
+    Files.createDirectory(dirY);
 
     Path aTxtInDirX = dirX.resolve("a.txt");
     Files.write(aTxtInDirX, List.of("content-of-a.txt"), StandardCharsets.UTF_8);
