@@ -1,9 +1,6 @@
 package io.github.koppor.kodf.database;
 
-import com.google.common.hash.HashCode;
-
 import java.nio.file.Path;
-
 import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -24,8 +21,7 @@ public class DirData {
   private final MutableMultimap<Long, FileData> sizeToFileData = determineSizeToFileData();
 
   @Getter(lazy = true)
-  private final MutableMultimap<Long, FileData> hashCodeToFileData =
-    determineHashCodeToFileData();
+  private final MutableMultimap<Long, FileData> hashCodeToFileData = determineHashCodeToFileData();
 
   private MutableMultimap<Long, FileData> determineHashCodeToFileData() {
     MutableMultimap<Long, FileData> result = FastListMultimap.newMultimap();

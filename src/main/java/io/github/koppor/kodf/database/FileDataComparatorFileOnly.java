@@ -2,8 +2,6 @@ package io.github.koppor.kodf.database;
 
 import java.util.Comparator;
 
-import io.github.koppor.kodf.database.FileData;
-
 public class FileDataComparatorFileOnly implements Comparator<FileData> {
 
   @Override

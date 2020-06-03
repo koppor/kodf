@@ -1,7 +1,6 @@
 package io.github.koppor.kodf.filecollection;
 
 import java.util.List;
-
 import org.eclipse.collections.api.factory.Lists;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
