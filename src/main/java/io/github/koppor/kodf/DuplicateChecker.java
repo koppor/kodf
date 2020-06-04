@@ -138,7 +138,7 @@ public class DuplicateChecker {
 
           // checksum-based matching
 
-          allDirsWhereAllFileSizesAppear.reject(
+          allDirsWhereAllFileSizesAppear = allDirsWhereAllFileSizesAppear.reject(
               otherDirData -> {
                 Iterator<FileData> thisFileDataIterator = dirData.files.iterator();
                 boolean hashMatch;

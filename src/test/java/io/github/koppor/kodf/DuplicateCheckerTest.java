@@ -19,7 +19,7 @@ class DuplicateCheckerTest {
   private FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
 
   @Test
-  void testProperSubSetWithOneMoreFile() throws Exception {
+  void testProperSubSetWithOneMoreFileHavingSameSize() throws Exception {
     // /x is contained in /y
 
     // Idea:
@@ -49,7 +49,7 @@ class DuplicateCheckerTest {
     Graph expected = new DefaultDirectedGraph(DefaultEdge.class);
     expected.addVertex(dirX);
     expected.addVertex(dirY);
-    expected.addEdge(dirY, dirY);
+    expected.addEdge(dirY, dirX);
 
     assertEquals(expected, duplicateChecker.getPathRelation());
   }
