@@ -4,6 +4,7 @@ import io.github.koppor.kodf.database.DirData;
 import io.github.koppor.kodf.database.FileData;
 import io.github.koppor.kodf.filecollection.FileCollector;
 import io.github.koppor.kodf.formatters.DirDataSetFormatter;
+import io.github.koppor.kodf.jgraphtsupport.HashableEdge;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +25,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.multimap.set.SynchronizedPutUnifiedSetMultimap;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
 import org.tinylog.Logger;
 
 @Builder
@@ -51,7 +51,7 @@ public class DuplicateChecker {
   }
 
   public void checkDuplicates() {
-    $pathRelation = new DefaultDirectedGraph(DefaultEdge.class);
+    $pathRelation = new DefaultDirectedGraph(HashableEdge.class);
 
     MutableMap<Path, DirData> pathToDirData = Maps.mutable.empty();
     MutableSet<FileData> allFiles = Sets.mutable.empty();
@@ -138,20 +138,21 @@ public class DuplicateChecker {
 
           // checksum-based matching
 
-          allDirsWhereAllFileSizesAppear = allDirsWhereAllFileSizesAppear.reject(
-              otherDirData -> {
-                Iterator<FileData> thisFileDataIterator = dirData.files.iterator();
-                boolean hashMatch;
-                do {
-                  FileData thisFileData = thisFileDataIterator.next();
-                  MutableCollection<FileData> otherFileDataHavingMatchingHashes =
-                      otherDirData.hashCodeToFileData().get(thisFileData.hashValue());
-                  hashMatch =
-                      otherFileDataHavingMatchingHashes.anySatisfy(
-                          eqFileData -> eqFileData.size().equals(thisFileData.size()));
-                } while (hashMatch && thisFileDataIterator.hasNext());
-                return !hashMatch;
-              });
+          allDirsWhereAllFileSizesAppear =
+              allDirsWhereAllFileSizesAppear.reject(
+                  otherDirData -> {
+                    Iterator<FileData> thisFileDataIterator = dirData.files.iterator();
+                    boolean hashMatch;
+                    do {
+                      FileData thisFileData = thisFileDataIterator.next();
+                      MutableCollection<FileData> otherFileDataHavingMatchingHashes =
+                          otherDirData.hashCodeToFileData().get(thisFileData.hashValue());
+                      hashMatch =
+                          otherFileDataHavingMatchingHashes.anySatisfy(
+                              eqFileData -> eqFileData.size().equals(thisFileData.size()));
+                    } while (hashMatch && thisFileDataIterator.hasNext());
+                    return !hashMatch;
+                  });
 
           Logger.debug(
               "Directories where {} is contained: {}",

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import io.github.koppor.kodf.jgraphtsupport.HashableEdge;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -11,7 +12,6 @@ import java.nio.file.Path;
 import java.util.List;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
 import org.junit.jupiter.api.Test;
 
 class DuplicateCheckerTest {
@@ -46,7 +46,7 @@ class DuplicateCheckerTest {
         DuplicateChecker.builder().pathToScan(dirX).pathToScan(dirY).build();
     duplicateChecker.checkDuplicates();
 
-    Graph expected = new DefaultDirectedGraph(DefaultEdge.class);
+    Graph expected = new DefaultDirectedGraph(HashableEdge.class);
     expected.addVertex(dirX);
     expected.addVertex(dirY);
     expected.addEdge(dirY, dirX);
