@@ -2,7 +2,10 @@ plugins {
   id 'java'
   id 'application'
   id 'com.github.sherter.google-java-format' version '0.8'
-  id "io.freefair.lombok" version "5.0.0-rc6"
+
+  // see https://docs.freefair.io/gradle-plugins/5.1.0/reference/
+  id "io.freefair.lombok" version "5.1.0"
+
   id 'org.beryx.runtime' version '1.8.1'
 }
 
