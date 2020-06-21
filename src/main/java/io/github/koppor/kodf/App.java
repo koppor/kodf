@@ -1,14 +1,13 @@
 package io.github.koppor.kodf;
 
-import java.nio.file.Path;
-import java.util.stream.Collectors;
-import org.eclipse.collections.api.factory.Sets;
-import org.tinylog.Logger;
 import picocli.CommandLine;
 
 public class App {
 
-  @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
+  @CommandLine.Option(
+      names = {"-h", "--help"},
+      usageHelp = true,
+      description = "display a help message")
   private boolean usageHelpRequested = false;
 
   public static void main(String[] args) {

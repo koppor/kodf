@@ -2,7 +2,6 @@ package io.github.koppor.kodf.database;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.google.common.hash.HashCode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.koppor.kodf.typeadapters.FileTimeTypeAdapter;
@@ -19,7 +18,7 @@ class FileDataTest {
   void hashValue() throws Exception {
     Path tempFile = Files.createTempFile("kodf", "tmp");
     FileData fileData = FileData.of(tempFile, 0L);
-    assertEquals(HashCode.fromInt(0), fileData.hashValue());
+    assertEquals(0L, fileData.hashValue());
   }
 
   @Test
