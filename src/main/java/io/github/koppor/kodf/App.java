@@ -1,5 +1,12 @@
 package io.github.koppor.kodf;
 
+import io.github.koppor.kodf.jgraphtsupport.HashableEdge;
+import java.nio.file.Path;
+import org.jgrapht.Graph;
+import org.jgrapht.event.EdgeTraversalEvent;
+import org.jgrapht.event.TraversalListenerAdapter;
+import org.jgrapht.traverse.DepthFirstIterator;
+import org.jgrapht.traverse.GraphIterator;
 import picocli.CommandLine;
 
 public class App {
@@ -17,41 +24,38 @@ public class App {
       return;
     }
 
-    /*
     DuplicateChecker duplicateChecker =
         DuplicateChecker.builder()
-            .pathsToScan(
-                Sets.immutable.of(Path.of("C:\\git-repositories\\MyLibreLab")))
-            .pathsToIgnore(
-                Sets.immutable.of(
-                    Path.of("/volume1/homes/alina/#recycle"),
-                    Path.of("/volume1/homes/photo/#recycle")))
+            .pathToScan(Path.of("C:\\TEMP\\testdup\\dira"))
+            .pathToScan(Path.of("C:\\TEMP\\testdup\\dirb"))
             .build();
 
     duplicateChecker.checkDuplicates();
 
-    duplicateChecker
-        .getPathSubSetOf()
-        .keyBag()
-        .toSortedList()
-        .forEach(
-            path -> {
-              StringBuilder stringBuilder = new StringBuilder();
-              stringBuilder.append(path.toString());
-              stringBuilder.append(" -> ");
-              String superPaths =
-                  duplicateChecker
-                      .getPathSubSetOf()
-                      .get(path)
-                      .stream()
-                      .map(Path::toString)
-                      .collect(Collectors.joining(", "));
-              stringBuilder.append(superPaths);
-              String output = stringBuilder.toString();
-              Logger.debug("Superdirs: {}", output);
-              System.out.println(output);
-            });
+    Graph<Path, HashableEdge> result = duplicateChecker.getPathRelation();
 
-     */
+    outputResult(result);
+  }
+
+  private static void outputResult(Graph<Path, HashableEdge> result) {
+    System.out.println();
+    System.out.println("== Result ==");
+    System.out.println();
+    GraphIterator<Path, HashableEdge> iterator = new DepthFirstIterator<Path, HashableEdge>(result);
+    iterator.addTraversalListener(
+        new TraversalListenerAdapter<Path, HashableEdge>() {
+          @Override
+          public void edgeTraversed(EdgeTraversalEvent<HashableEdge> e) {
+            String source = e.getEdge().getSource().toString();
+            String target = e.getEdge().getTarget().toString();
+            String output = source + " -> " + target;
+            // Logger.debug(output);
+            System.out.println(output);
+          }
+        });
+
+    while (iterator.hasNext()) {
+      iterator.next();
+    }
   }
 }

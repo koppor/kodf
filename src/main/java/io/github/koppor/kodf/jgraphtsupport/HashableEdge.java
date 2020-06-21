@@ -1,13 +1,22 @@
 package io.github.koppor.kodf.jgraphtsupport;
 
+import java.nio.file.Path;
 import java.util.Objects;
 import org.jgrapht.graph.DefaultEdge;
 
 public class HashableEdge extends DefaultEdge {
 
+  public Path getSource() {
+    return (Path) super.getSource();
+  }
+
+  public Path getTarget() {
+    return (Path) super.getTarget();
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(getSource(), getTarget());
+    return Objects.hash(super.getSource(), super.getTarget());
   }
 
   @Override
