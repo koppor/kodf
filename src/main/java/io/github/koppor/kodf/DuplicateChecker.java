@@ -43,10 +43,10 @@ public class DuplicateChecker {
   @Singular("pathToIgnore")
   private final Set<Path> pathsToIgnore;
 
-  private Graph<Path, Path> $pathRelation;
+  private Graph<Path, HashableEdge> $pathRelation;
 
   /** @return a map from a path to the set of paths where this path is a s subset of */
-  public Graph<Path, Path> getPathRelation() {
+  public Graph<Path, HashableEdge> getPathRelation() {
     return $pathRelation;
   }
 
@@ -82,8 +82,7 @@ public class DuplicateChecker {
     // fill sizeToDirData
     MutableSetMultimap<Long, DirData> sizeToDirData =
         SynchronizedPutUnifiedSetMultimap.newMultimap();
-    allFiles
-        .parallelStream()
+    allFiles.parallelStream()
         .forEach(fileData -> sizeToDirData.put(fileData.size(), pathToDirData.get(fileData.dir())));
 
     // determine map from size to set of DirData (which are candidates from the view of the size)
@@ -162,8 +161,7 @@ public class DuplicateChecker {
           if (!allDirsWhereAllFileSizesAppear.isEmpty()) {
             // collect result
             $pathRelation.addVertex(path);
-            allDirsWhereAllFileSizesAppear
-                .stream()
+            allDirsWhereAllFileSizesAppear.stream()
                 .map(x -> x.dir())
                 .forEach(
                     parentPath -> {
