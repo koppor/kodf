@@ -1,12 +1,17 @@
 plugins {
   id 'java'
   id 'application'
-  id 'com.github.sherter.google-java-format' version '0.8'
+
+  // Utilizes google-java-format to format the Java source files
+  // See https://github.com/sherter/google-java-format-gradle-plugin
+  id 'com.github.sherter.google-java-format' version '0.9'
 
   // see https://docs.freefair.io/gradle-plugins/5.1.0/reference/
   id "io.freefair.lombok" version "5.1.0"
 
-  id 'org.beryx.runtime' version '1.8.1'
+  // Assembles your modules into a custom runtime image
+  // See https://plugins.gradle.org/plugin/org.beryx.runtime
+  id 'org.beryx.runtime' version '1.9.1'
 }
 
 repositories {
