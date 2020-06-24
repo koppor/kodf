@@ -1,5 +1,8 @@
 package io.github.koppor.kodf;
 
+import io.github.koppor.kodf.duplication.DuplicateChecker;
+import io.github.koppor.kodf.duplication.DuplicateCheckerConfig;
+import java.nio.file.Path;
 import picocli.CommandLine;
 
 public class App {
@@ -17,41 +20,14 @@ public class App {
       return;
     }
 
-    /*
-    DuplicateChecker duplicateChecker =
-        DuplicateChecker.builder()
-            .pathsToScan(
-                Sets.immutable.of(Path.of("C:\\git-repositories\\MyLibreLab")))
-            .pathsToIgnore(
-                Sets.immutable.of(
-                    Path.of("/volume1/homes/alina/#recycle"),
-                    Path.of("/volume1/homes/photo/#recycle")))
+    DuplicateCheckerConfig config =
+        DuplicateCheckerConfig.builder()
+            .pathToScan(
+                Path.of(
+                    "C:\\dev\\IdeaProjects\\kodf\\src\\test\\testdata")) // TODO read from config
             .build();
 
-    duplicateChecker.checkDuplicates();
-
-    duplicateChecker
-        .getPathSubSetOf()
-        .keyBag()
-        .toSortedList()
-        .forEach(
-            path -> {
-              StringBuilder stringBuilder = new StringBuilder();
-              stringBuilder.append(path.toString());
-              stringBuilder.append(" -> ");
-              String superPaths =
-                  duplicateChecker
-                      .getPathSubSetOf()
-                      .get(path)
-                      .stream()
-                      .map(Path::toString)
-                      .collect(Collectors.joining(", "));
-              stringBuilder.append(superPaths);
-              String output = stringBuilder.toString();
-              Logger.debug("Superdirs: {}", output);
-              System.out.println(output);
-            });
-
-     */
+    DuplicateChecker duplicateChecker = new DuplicateChecker(config);
+    duplicateChecker.run();
   }
 }

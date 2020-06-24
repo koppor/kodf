@@ -1,7 +1,7 @@
 package io.github.koppor.kodf.filecollection;
 
+import java.util.ArrayList;
 import java.util.List;
-import org.eclipse.collections.api.factory.Lists;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -9,5 +9,5 @@ import picocli.CommandLine.Option;
 public class FileCollection {
 
   @Option(names = "--ignore", description = "Directories to ignore")
-  List<String> directoriesToIgnore = Lists.mutable.empty();
+  List<String> directoriesToIgnore = new ArrayList<>();
 }
