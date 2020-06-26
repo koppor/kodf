@@ -22,7 +22,7 @@ import org.tinylog.Logger;
 @RequiredArgsConstructor
 public class FileCollector implements FileVisitor<Path> {
 
-  private final Set<Path> pathsToIgnore; // imuable
+  private final Set<Path> pathsToIgnore; // immutable
   private final ProgressBar progressBar;
   private final List<DirData> allDirs;
 
@@ -33,7 +33,7 @@ public class FileCollector implements FileVisitor<Path> {
     Logger.debug("Visiting {}...", dir.toString());
     progressBar.step();
     progressBar.setExtraMessage(dir.toString());
-    if (pathsToIgnore.contains(dir)) {
+    if (pathsToIgnore.contains(dir) || "@eadir".equals(dir.getFileName())) {
       Logger.debug("Ignoring directory");
       return FileVisitResult.SKIP_SUBTREE;
     }
