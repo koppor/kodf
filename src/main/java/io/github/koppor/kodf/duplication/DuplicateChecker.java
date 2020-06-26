@@ -101,23 +101,43 @@ public class DuplicateChecker {
   }
 
   private void findDuplicateFiles(MultiValuedMap<Long, FileData> filesBySize) {
-    MultiSet<Long> fileSizes = filesBySize.keys();
+    //filesBySize.asMap().forEach();
+    Set<Long> fileSizes = filesBySize.keySet();
     for (Long fileSize : ProgressBar.wrap(fileSizes, "Compare Files")) {
+      Logger.debug("Comparing files of size {}", fileSize);
       Collection<FileData> fileDataCollection = filesBySize.get(fileSize);
-      Collection<FileData> compFiles = new ArrayList<>(fileDataCollection.size());
-      for (FileData currentFileToCheck : fileDataCollection) {
-        for (FileData compFile : compFiles) {
-          try {
-            if (FileUtils.contentEquals(
-                currentFileToCheck.getPath().toFile(), compFile.getPath().toFile())) {
-              fileDuplicationTracker.addDuplicate(currentFileToCheck, compFile);
-            }
-          } catch (IOException e) {
-            Logger.warn(
-                "Error comparing {} and {}", currentFileToCheck.getPath(), compFile.getPath());
-          }
+      Logger.debug("These are {} files", fileDataCollection.size());
+      if ((fileSize == 0) && (fileDataCollection.size() > 1)) {
+        Iterator<FileData> iterator = fileDataCollection.iterator();
+        FileData firstFile = iterator.next();
+        /* works because
+          A B C D
+          A,B, A,C A,D
+         */
+        while (iterator.hasNext()) {
+          fileDuplicationTracker.addDuplicate(firstFile, iterator.next());
         }
-        compFiles.add(currentFileToCheck);
+      } else {
+        Collection<FileData> compFiles = new ArrayList<>();
+        for (FileData currentFileToCheck : fileDataCollection) {
+          Iterator<FileData> iterator = compFiles.iterator();
+          boolean duplicateFound = false;
+          while (iterator.hasNext() && !duplicateFound) {
+            FileData compFile = iterator.next();
+            //Logger.warn("Comparing {} and {}", currentFileToCheck.getPath(), compFile.getPath());
+            try {
+              if (FileUtils.contentEquals(
+                currentFileToCheck.getPath().toFile(), compFile.getPath().toFile())) {
+                fileDuplicationTracker.addDuplicate(currentFileToCheck, compFile);
+                duplicateFound = true;
+              }
+            } catch (IOException e) {
+              Logger.warn(
+                "Error comparing {} and {}", currentFileToCheck.getPath(), compFile.getPath());
+            }
+          }
+          compFiles.add(currentFileToCheck);
+        }
       }
     }
   }
