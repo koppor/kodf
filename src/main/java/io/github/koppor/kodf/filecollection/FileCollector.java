@@ -33,7 +33,7 @@ public class FileCollector implements FileVisitor<Path> {
     Logger.debug("Visiting {}...", dir.toString());
     progressBar.step();
     progressBar.setExtraMessage(dir.toString());
-    if (pathsToIgnore.contains(dir) || "@eadir".equals(dir.getFileName()) || "$RECYCLE.BIN".equals(dir.getFileName())) {
+    if (pathsToIgnore.contains(dir) || "@eadir".equals(dir.getFileName()) || "$RECYCLE.BIN".equals(dir.getFileName()) || ".git".equals(dir.getFileName())) {
       Logger.debug("Ignoring directory");
       return FileVisitResult.SKIP_SUBTREE;
     }
