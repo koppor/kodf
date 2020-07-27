@@ -9,7 +9,7 @@ public final class DirDataSetFormatter {
 
   public static String format(Set<DirData> set) {
     return set.stream()
-        .map(DirData::dir)
+        .map(DirData::getPath)
         .map(Path::toString)
         .collect(Collectors.joining(", ", "[", "]"));
   }

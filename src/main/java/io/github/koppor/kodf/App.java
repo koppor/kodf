@@ -1,12 +1,8 @@
 package io.github.koppor.kodf;
 
-import io.github.koppor.kodf.jgraphtsupport.HashableEdge;
+import io.github.koppor.kodf.duplication.DuplicateChecker;
+import io.github.koppor.kodf.duplication.DuplicateCheckerConfig;
 import java.nio.file.Path;
-import org.jgrapht.Graph;
-import org.jgrapht.event.EdgeTraversalEvent;
-import org.jgrapht.event.TraversalListenerAdapter;
-import org.jgrapht.traverse.DepthFirstIterator;
-import org.jgrapht.traverse.GraphIterator;
 import picocli.CommandLine;
 
 public class App {
@@ -24,38 +20,14 @@ public class App {
       return;
     }
 
-    DuplicateChecker duplicateChecker =
-        DuplicateChecker.builder()
-            .pathToScan(Path.of("C:\\TEMP\\testdup\\dira"))
-            .pathToScan(Path.of("C:\\TEMP\\testdup\\dirb"))
+    DuplicateCheckerConfig config =
+        DuplicateCheckerConfig.builder()
+            .pathToScan(
+                Path.of(
+                    "C:\\dev\\IdeaProjects\\kodf\\src\\test\\testdata")) // TODO read from config
             .build();
 
-    duplicateChecker.checkDuplicates();
-
-    Graph<Path, HashableEdge> result = duplicateChecker.getPathRelation();
-
-    outputResult(result);
-  }
-
-  private static void outputResult(Graph<Path, HashableEdge> result) {
-    System.out.println();
-    System.out.println("== Result ==");
-    System.out.println();
-    GraphIterator<Path, HashableEdge> iterator = new DepthFirstIterator<Path, HashableEdge>(result);
-    iterator.addTraversalListener(
-        new TraversalListenerAdapter<Path, HashableEdge>() {
-          @Override
-          public void edgeTraversed(EdgeTraversalEvent<HashableEdge> e) {
-            String source = e.getEdge().getSource().toString();
-            String target = e.getEdge().getTarget().toString();
-            String output = source + " -> " + target;
-            // Logger.debug(output);
-            System.out.println(output);
-          }
-        });
-
-    while (iterator.hasNext()) {
-      iterator.next();
-    }
+    DuplicateChecker duplicateChecker = new DuplicateChecker(config);
+    duplicateChecker.run();
   }
 }
