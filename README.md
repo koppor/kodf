@@ -22,7 +22,6 @@ Distinguishing feature:
 - We rely on [Project Lombok](https://projectlombok.org/)
 - Create an executable by invoking `gradlew runtime`. It will generate the `build/image` directory.
 - Build linux image on Windows
-
    ```terminal
    docker run --rm -it -w /tmp/kodf -v c:\git-repositories\kodf:/tmp/kodf openjdk:14-jdk ./gradlew runtime
    ```
