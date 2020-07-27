@@ -6,7 +6,7 @@ Finds duplicate files in different directories.
 - (Currently) more code-oriented
 - Less UI than [dupeGuru](https://dupeguru.voltaicideas.net/)
 
-Distinguishing feature:
+## Distinguishing features
 
 - **Diretory subset identification**.
   Sometimes, a file-based backup is made to different places on the NAS.
