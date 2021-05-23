@@ -1,4 +1,4 @@
-# Koppor's Duplicate Finder
+# koppor's Duplicate Finder
 
 Finds duplicate files in different directories.
 
@@ -15,6 +15,10 @@ Finds duplicate files in different directories.
   Finds duplicate directories in aribtrary sub folders.
   For instance, if one copy of the directory is contained in both `H:\backups\2019-01-05\data-from-white-hdd` and in `H:\0-to-sort\whiteone`, it is found
   With other tools, one has to start the comparison from `H:\backups\2019-01-05` and `H:\0-to-sort`, but who knows that `2019-01-05` is the right top level diretory to start from.
+
+### Other tools
+
+- [fdupes](https://github.com/adrianlopezroche/fdupes) - very prominent tool maintained since 1999.
 
 ## Development
 
