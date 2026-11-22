@@ -1,0 +1,3 @@
+[files]
+# Gradle wrapper scripts are generated upstream
+extend-exclude = ["gradlew", "gradlew.bat"]
