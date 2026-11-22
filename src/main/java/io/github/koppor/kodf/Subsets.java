@@ -26,6 +26,8 @@ final class Subsets {
    * Maps each such directory to the smallest directories containing all of its content. A directory
    * is left out when one of its ancestors is reported already.
    */
+  // [impl->dsn~subset-anywhere~1]
+  // [impl->dsn~outermost-subset-smallest-superset~1]
   static Map<Path, List<Path>> find(Connection db) throws SQLException {
     // ponytail: every file's hash is added to all its ancestors, memory is files × depth; switch
     // to a bottom-up merge in SQL if a NAS scan does not fit in the heap.

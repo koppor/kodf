@@ -25,6 +25,7 @@ import java.util.Set;
  */
 final class Scanner {
 
+  // [impl->dsn~ignored-directories~1]
   /** Synology metadata, recycle bins and snapshots are not user data. */
   static final Set<String> IGNORED =
       Set.of("@eaDir", "#recycle", "#snapshot", "$RECYCLE.BIN", ".git");
@@ -32,9 +33,12 @@ final class Scanner {
   private static final int COMMIT_EVERY = 100;
 
   private final Connection db;
+  private final long minSize;
 
-  Scanner(Connection db) {
+  Scanner(Connection db, long minSize) {
     this.db = db;
+    // Empty files are all equal and say nothing about where data is duplicated.
+    this.minSize = Math.max(1, minSize);
   }
 
   void scan(List<Path> roots) throws IOException, SQLException {
@@ -51,6 +55,7 @@ final class Scanner {
     db.setAutoCommit(true);
   }
 
+  // [impl->dsn~incremental-rescan~1]
   private void collect(Path root) throws IOException, SQLException {
     // An unchanged size and modification time keep the known hash, so a rescan reads only
     // changed files.
@@ -77,8 +82,7 @@ final class Scanner {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-              // Empty files are all equal and say nothing about where data is duplicated.
-              if (!attrs.isRegularFile() || attrs.size() == 0) {
+              if (!attrs.isRegularFile() || attrs.size() < minSize) {
                 return FileVisitResult.CONTINUE;
               }
               try {
@@ -120,6 +124,7 @@ final class Scanner {
     }
   }
 
+  // [impl->dsn~hash-size-collisions~1]
   private void hash() throws SQLException {
     try (Statement s = db.createStatement();
         ResultSet rs =

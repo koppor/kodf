@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+// [impl->dsn~sqlite-index~1]
 /** The scan results: one row per regular file, with its content hash once it is known. */
 final class Db {
 

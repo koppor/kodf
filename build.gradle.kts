@@ -5,15 +5,23 @@ plugins {
 
 group = "io.github.koppor"
 
+// The JBang header of App.java declares the Java version and the dependencies, so that
+// `jbang kodf@koppor/kodf` and this build cannot drift apart.
+val jbangHeader = file("src/main/java/io/github/koppor/kodf/App.java").readLines()
+    .filter { it.startsWith("//") }
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(27)
+        // [impl->adr~java~1]
+        languageVersion = JavaLanguageVersion.of(
+            jbangHeader.first { it.startsWith("//JAVA ") }.removePrefix("//JAVA ").trim().toInt(),
+        )
     }
 }
 
 dependencies {
-    implementation("info.picocli:picocli:4.7.7")
-    implementation("org.xerial:sqlite-jdbc:3.54.1.0")
+    jbangHeader.filter { it.startsWith("//DEPS ") }
+        .forEach { implementation(it.removePrefix("//DEPS ").trim()) }
 
     testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -33,6 +41,8 @@ tasks.test {
 
 spotless {
     java {
+        // The JBang header of App.java must keep its `//DEPS` form.
+        toggleOffOn()
         googleJavaFormat("2.0.0")
     }
 }

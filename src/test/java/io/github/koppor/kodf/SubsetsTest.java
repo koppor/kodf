@@ -21,12 +21,19 @@ class SubsetsTest {
   }
 
   private Map<Path, List<Path>> scan() throws Exception {
+    return scan(1);
+  }
+
+  private Map<Path, List<Path>> scan(long minSize) throws Exception {
     try (Connection db = Db.open(tmp.resolve("kodf.db"))) {
-      new Scanner(db).scan(List.of(tmp.resolve("data")));
+      new Scanner(db, minSize).scan(List.of(tmp.resolve("data")));
       return Subsets.find(db);
     }
   }
 
+  // [utest->dsn~sqlite-index~1]
+  // [utest->dsn~subset-anywhere~1]
+  // [utest->dsn~outermost-subset-smallest-superset~1]
   @Test
   void findsSubsetInUnrelatedSubtree() throws Exception {
     write("data/backups/2019-01-05/white-hdd/a.txt", "aaa");
@@ -45,6 +52,7 @@ class SubsetsTest {
         scan());
   }
 
+  // [utest->dsn~hash-size-collisions~1]
   @Test
   void fileWithUniqueContentPreventsSubset() throws Exception {
     write("data/a/x.txt", "xxx");
@@ -55,6 +63,7 @@ class SubsetsTest {
     assertEquals(Map.of(), scan());
   }
 
+  // [utest->dsn~incremental-rescan~1]
   @Test
   void rescanForgetsDeletedFiles() throws Exception {
     write("data/a/x.txt", "xxx");
@@ -66,5 +75,19 @@ class SubsetsTest {
 
     Files.delete(tmp.resolve("data/b/y.txt"));
     assertEquals(Map.of(), scan());
+  }
+
+  // [utest->dsn~min-size~1]
+  @Test
+  void smallFilesAreLeftOut() throws Exception {
+    write("data/a/big.bin", "bigbig");
+    write("data/a/small.txt", "s");
+    write("data/b/big.bin", "bigbig");
+    write("data/b/small.txt", "t");
+    Path a = tmp.resolve("data/a");
+    Path b = tmp.resolve("data/b");
+
+    assertEquals(Map.of(), scan(1));
+    assertEquals(Map.of(a, List.of(b), b, List.of(a)), scan(2));
   }
 }

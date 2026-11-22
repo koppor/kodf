@@ -22,21 +22,48 @@ Finds duplicate files in different directories.
 
 ## Usage
 
-Run it on the NAS itself, so it reads the disks directly instead of over the network:
+Run it on the NAS itself, so it reads the disks directly instead of over the network.
+The only thing to install is [JBang](https://www.jbang.dev/download/); it downloads Java and kodf (from `main`, the latest daily release) by itself:
 
 ```terminal
-kodf scan /volume1/backups /volume1/to-sort
-kodf report
+jbang kodf@koppor/kodf scan /volume1/backups /volume1/to-sort
+jbang kodf@koppor/kodf report
 ```
 
-`scan` records all files in `kodf.db` (SQLite, choose another file with `--db`).
-A rescan reads only files whose size or modification time changed.
-Only files that share their size with another file are hashed.
-`report` lists the directories whose whole content also exists elsewhere.
+Example output:
+
+```text
+/volume1/backups/2019-01-05
+  contained in /volume1/to-sort/whiteone
+```
+
+### What it does
+
+- `scan DIR...` records every file below the given directories in `kodf.db`, an SQLite database (choose another file with `--db`).
+  - Only files that share their size with another file are read and hashed (SHA-256); a file of unique size cannot have a duplicate.
+  - A rescan reads only files whose size or modification time changed, and forgets files that are gone.
+  - Empty files are not recorded.
+  - `--min-size BYTES` leaves out smaller files, for a faster scan of photos and videos.
+    A directory may then be reported although it holds smaller files that exist nowhere else.
+  - Not scanned: `@eaDir`, `#recycle`, `#snapshot` (Synology), `$RECYCLE.BIN`, `.git`.
+- `report` lists each directory whose whole content also exists in another directory, wherever that one lies, and names that directory.
+  - A directory is not listed when a directory around it is listed already.
+  - Only the innermost containing directories are named.
+  - Two directories with the same content are both listed, each with the other.
+
+Nothing is deleted or changed; `report` only lists.
+
+### Planned
+
+- A web page served by kodf that shows the directories as nested circles, and shared content as overlapping circles.
+- On btrfs: recognizing files that already share their data on disk, and letting duplicates share their data instead of deleting them.
+
+The planned scope is tracked in [docs/requirements](docs/requirements/README.md), the decisions in [docs/decisions](docs/decisions/README.md).
 
 ## Development
 
 - Requires nothing but a JDK to start Gradle; Gradle downloads Java 27 itself.
 - `./gradlew build` compiles, checks the formatting and runs the tests.
 - `./gradlew spotlessApply` formats the code ([Google Java Style](https://google.github.io/styleguide/javaguide.html)).
-- `./gradlew installDist` creates `build/install/kodf/bin/kodf`; it needs Java 27 as `JAVA_HOME`.
+- `jbang kodf ...` runs the checkout, `jbang trace` traces requirements and decisions with [OpenFastTrace](https://github.com/itsallcode/openfasttrace).
+- The Java version and the dependencies are declared in the JBang header of `App.java`; the Gradle build reads them from there.

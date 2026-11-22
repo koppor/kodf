@@ -3,6 +3,7 @@ name: Daily release
 # Every morning: merge experimental into main and, when CHANGELOG.md has an
 # [Unreleased] section, turn it into the CalVer release of the previous day,
 # the day the changes were made.
+# [impl->adr~calver-changelog~1]
 on:
   schedule:
     - cron: '0 4 * * *'

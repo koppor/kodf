@@ -1,0 +1,14 @@
+{
+  "catalogs": {},
+  "aliases": {
+    "kodf": {
+      "script-ref": "src/main/java/io/github/koppor/kodf/App.java",
+      "description": "Finds directories whose content exists elsewhere"
+    },
+    "trace": {
+      "script-ref": "org.itsallcode.openfasttrace:openfasttrace:4.11.0",
+      "description": "Traces requirements and decisions to code and tests with OpenFastTrace",
+      "arguments": ["trace", "docs", "src", "build.gradle.kts", ".github/workflows"]
+    }
+  }
+}

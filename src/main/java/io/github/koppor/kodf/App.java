@@ -1,3 +1,13 @@
+// spotless:off
+// [impl->adr~jbang~1]
+// The build reads JAVA and DEPS from here, so they are declared only once.
+//JAVA 27
+//DEPS info.picocli:picocli:4.7.7
+//DEPS org.xerial:sqlite-jdbc:3.54.1.0
+//SOURCES Db.java Scanner.java Subsets.java
+//RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
+// spotless:on
+
 package io.github.koppor.kodf;
 
 import java.nio.file.Path;
@@ -34,15 +44,25 @@ public class App {
     @Parameters(arity = "1..*", paramLabel = "DIR")
     List<Path> roots;
 
+    // [impl->dsn~min-size~1]
+    @Option(
+        names = "--min-size",
+        defaultValue = "1",
+        description =
+            "Smallest file size in bytes to record (default: ${DEFAULT-VALUE}). Smaller files are"
+                + " left out entirely: a directory reported as a subset may still hold such files.")
+    long minSize;
+
     @Override
     public Integer call() throws Exception {
       try (Connection db = Db.open(app.db)) {
-        new Scanner(db).scan(roots);
+        new Scanner(db, minSize).scan(roots);
       }
       return 0;
     }
   }
 
+  // [impl->dsn~report~1]
   @Command(name = "report", description = "Lists directories whose content exists elsewhere.")
   static class Report implements Callable<Integer> {
     @CommandLine.ParentCommand App app;
