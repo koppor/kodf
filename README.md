@@ -20,18 +20,23 @@ Finds duplicate files in different directories.
 
 - [fdupes](https://github.com/adrianlopezroche/fdupes) - very prominent tool maintained since 1999.
 
+## Usage
+
+Run it on the NAS itself, so it reads the disks directly instead of over the network:
+
+```terminal
+kodf scan /volume1/backups /volume1/to-sort
+kodf report
+```
+
+`scan` records all files in `kodf.db` (SQLite, choose another file with `--db`).
+A rescan reads only files whose size or modification time changed.
+Only files that share their size with another file are hashed.
+`report` lists the directories whose whole content also exists elsewhere.
+
 ## Development
 
-- To format the code `./gradlew googleJavaFormat`
-- We rely on [Project Lombok](https://projectlombok.org/)
-- Create an executable by invoking `gradlew runtime`. It will generate the `build/image` directory.
-- Build linux image on Windows
-   ```terminal
-   docker run --rm -it -w /tmp/kodf -v c:\git-repositories\kodf:/tmp/kodf openjdk:14-jdk ./gradlew runtime
-   ```
-
-### Development Setup
-
-- The project uses the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)
-- Configure IntelliJ's checkstyle plugin to use the build-in "Google Style"
-- Install the [Lombok IntelliJ plugin](https://plugins.jetbrains.com/plugin/6317-lombok)
+- Requires nothing but a JDK to start Gradle; Gradle downloads Java 27 itself.
+- `./gradlew build` compiles, checks the formatting and runs the tests.
+- `./gradlew spotlessApply` formats the code ([Google Java Style](https://google.github.io/styleguide/javaguide.html)).
+- `./gradlew installDist` creates `build/install/kodf/bin/kodf`; it needs Java 27 as `JAVA_HOME`.
