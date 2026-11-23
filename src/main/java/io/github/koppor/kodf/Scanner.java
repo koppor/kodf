@@ -59,6 +59,13 @@ final class Scanner {
 
     // [impl->dsn~incremental-rescan~1]
     private void collect(Path root) throws IOException, SQLException {
+        // [impl->dsn~vanished-root~1]
+        // A scanned directory that no longer exists only loses its rows below; walking it would record it as
+        // unreadable and block its parent.
+        boolean vanished = Files.notExists(root);
+        if (vanished) {
+            System.err.println(root + " no longer exists, its results are removed");
+        }
         // An unchanged size and modification time keep the known hash, so a rescan reads only
         // changed files.
         try (PreparedStatement upsert = db.prepareStatement("""
@@ -69,48 +76,49 @@ final class Scanner {
               size = excluded.size, mtime = excluded.mtime\
             """);
                 PreparedStatement seen = db.prepareStatement("INSERT OR IGNORE INTO seen VALUES (?)")) {
-            Files.walkFileTree(root, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                    Path name = dir.getFileName();
-                    return name != null && IGNORED.contains(name.toString())
-                            ? FileVisitResult.SKIP_SUBTREE
-                            : FileVisitResult.CONTINUE;
-                }
+            if (!vanished)
+                Files.walkFileTree(root, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                        Path name = dir.getFileName();
+                        return name != null && IGNORED.contains(name.toString())
+                                ? FileVisitResult.SKIP_SUBTREE
+                                : FileVisitResult.CONTINUE;
+                    }
 
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (!attrs.isRegularFile() || attrs.size() < minSize) {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        if (!attrs.isRegularFile() || attrs.size() < minSize) {
+                            return FileVisitResult.CONTINUE;
+                        }
+                        record(file, attrs.size(), attrs.lastModifiedTime().toMillis());
                         return FileVisitResult.CONTINUE;
                     }
-                    record(file, attrs.size(), attrs.lastModifiedTime().toMillis());
-                    return FileVisitResult.CONTINUE;
-                }
 
-                @Override
-                // [impl->dsn~unreadable-blocks-subset~1]
-                public FileVisitResult visitFileFailed(Path file, IOException e) {
-                    System.err.println("Cannot read " + file + ": " + e.getMessage());
-                    // A row without hash makes the directories around it unique, as their content is not
-                    // fully known.
-                    record(file, UNREADABLE, 0);
-                    return FileVisitResult.CONTINUE;
-                }
-
-                private void record(Path file, long size, long mtime) {
-                    try {
-                        upsert.setString(1, file.toString());
-                        upsert.setString(2, file.getParent().toString());
-                        upsert.setLong(3, size);
-                        upsert.setLong(4, mtime);
-                        upsert.executeUpdate();
-                        seen.setString(1, file.toString());
-                        seen.executeUpdate();
-                    } catch (SQLException e) {
-                        throw new IllegalStateException(e);
+                    @Override
+                    // [impl->dsn~unreadable-blocks-subset~1]
+                    public FileVisitResult visitFileFailed(Path file, IOException e) {
+                        System.err.println("Cannot read " + file + ": " + e.getMessage());
+                        // A row without hash makes the directories around it unique, as their content is not
+                        // fully known.
+                        record(file, UNREADABLE, 0);
+                        return FileVisitResult.CONTINUE;
                     }
-                }
-            });
+
+                    private void record(Path file, long size, long mtime) {
+                        try {
+                            upsert.setString(1, file.toString());
+                            upsert.setString(2, file.getParent().toString());
+                            upsert.setLong(3, size);
+                            upsert.setLong(4, mtime);
+                            upsert.executeUpdate();
+                            seen.setString(1, file.toString());
+                            seen.executeUpdate();
+                        } catch (SQLException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    }
+                });
         }
         try (PreparedStatement gone = db.prepareStatement("""
             DELETE FROM file

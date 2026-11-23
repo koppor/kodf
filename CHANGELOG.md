@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 ### Fixed
 
 - A directory holding something unreadable is no longer reported as contained elsewhere.
+- Rescanning a directory that no longer exists removes its results, instead of keeping its parent directory from being reported.
 
 ## [2026-11-22] - 2026-11-22
 

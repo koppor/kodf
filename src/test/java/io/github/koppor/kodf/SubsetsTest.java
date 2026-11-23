@@ -128,4 +128,22 @@ class SubsetsTest {
             Files.setPosixFilePermissions(secret, PosixFilePermissions.fromString("rwx------"));
         }
     }
+
+    // [utest->dsn~vanished-root~1]
+    @Test
+    void rescanOfVanishedDirectoryRemovesOnlyItsResults() throws Exception {
+        write("data/x/keep/f.txt", "xxx");
+        write("data/x/gone/g.txt", "gggg");
+        write("data/y/f.txt", "xxx");
+        write("data/y/g.txt", "gggg");
+        Path x = tmp.resolve("data/x");
+        Path y = tmp.resolve("data/y");
+        scan(1, x);
+        assertEquals(Map.of(x, List.of(y), y, List.of(x)), scan(1, y));
+
+        Path gone = tmp.resolve("data/x/gone");
+        Files.delete(gone.resolve("g.txt"));
+        Files.delete(gone);
+        assertEquals(Map.of(x, List.of(y)), scan(1, gone));
+    }
 }

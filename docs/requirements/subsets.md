@@ -67,6 +67,17 @@ Covers:
 
 Needs: impl, utest
 
+### Rescan of a vanished directory
+`dsn~vanished-root~1`
+
+When a directory given to `kodf scan` no longer exists, its rows are removed and nothing is recorded in its place, so that its parent directory is compared as before.
+
+Covers:
+
+* `req~scan~1`
+
+Needs: impl, utest
+
 ### Hash only files sharing their size
 `dsn~hash-size-collisions~1`
 
