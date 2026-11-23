@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
-## [Unreleased]
+## [2026-11-22] - 2026-11-22
 
 ### Added
 
@@ -19,4 +19,4 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - The previous prototype with its hard-coded scan path.
 
-[Unreleased]: https://github.com/koppor/kodf/compare/main...experimental
+[2026-11-22]: https://github.com/koppor/kodf/releases/tag/v2026-11-22
