@@ -73,6 +73,8 @@ final class Scanner {
             ON CONFLICT (path) DO UPDATE SET
               hash = CASE WHEN size = excluded.size AND mtime = excluded.mtime
                      THEN hash END,
+              extents = CASE WHEN size = excluded.size AND mtime = excluded.mtime
+                        THEN extents END,
               size = excluded.size, mtime = excluded.mtime\
             """);
                 PreparedStatement seen = db.prepareStatement("INSERT OR IGNORE INTO seen VALUES (?)")) {
@@ -136,24 +138,44 @@ final class Scanner {
     }
 
     // [impl->dsn~hash-size-collisions~1]
+    // [impl->dsn~shared-data-not-read~1]
+    // ponytail: the extents of a file with known hash are not read again, so a dedupe by another tool is
+    // seen only after the file changes; read them on every scan if that matters.
     private void hash() throws SQLException {
         try (Statement s = db.createStatement();
                 ResultSet rs = s.executeQuery("""
-                    SELECT path FROM file
-                    WHERE hash IS NULL AND size > 0
+                    SELECT path, size, hash FROM file
+                    WHERE (hash IS NULL OR extents IS NULL) AND size > 0
                       AND size IN (SELECT size FROM file GROUP BY size HAVING count(*) > 1)\
                     """);
-                PreparedStatement update = db.prepareStatement("UPDATE file SET hash = ? WHERE path = ?")) {
+                PreparedStatement sharing = db.prepareStatement("""
+                    SELECT hash FROM file WHERE extents = ? AND size = ? AND hash IS NOT NULL LIMIT 1\
+                    """);
+                PreparedStatement update =
+                        db.prepareStatement("UPDATE file SET hash = ?, extents = ? WHERE path = ?")) {
             int pending = 0;
             while (rs.next()) {
                 String path = rs.getString(1);
-                try {
-                    update.setString(1, sha256(Path.of(path)));
-                } catch (IOException e) {
-                    System.err.println("Cannot read " + path + ": " + e.getMessage());
-                    continue;
+                String extents = Extents.fingerprint(Path.of(path));
+                String hash = rs.getString(3);
+                if (hash == null && extents != null) {
+                    sharing.setString(1, extents);
+                    sharing.setLong(2, rs.getLong(2));
+                    try (ResultSet other = sharing.executeQuery()) {
+                        hash = other.next() ? other.getString(1) : null;
+                    }
                 }
-                update.setString(2, path);
+                if (hash == null) {
+                    try {
+                        hash = sha256(Path.of(path));
+                    } catch (IOException e) {
+                        System.err.println("Cannot read " + path + ": " + e.getMessage());
+                        continue;
+                    }
+                }
+                update.setString(1, hash);
+                update.setString(2, extents);
+                update.setString(3, path);
                 update.executeUpdate();
                 if (++pending == COMMIT_EVERY) {
                     db.commit();

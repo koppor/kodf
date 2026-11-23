@@ -2,6 +2,7 @@ package io.github.koppor.kodf;
 
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -84,5 +85,28 @@ final class Subsets {
             return false;
         });
         return result;
+    }
+
+    // [impl->dsn~shared-data-report~1]
+    /** Whether every file below {@code dir} shares its data on disk with a file below {@code superset}. */
+    static boolean sharesData(Connection db, Path dir, Path superset) throws SQLException {
+        try (PreparedStatement s = db.prepareStatement("""
+            SELECT NOT EXISTS (
+              SELECT 1 FROM file a
+              WHERE substr(a.path, 1, length(?1)) = ?1
+                AND (a.extents IS NULL OR NOT EXISTS (
+                  SELECT 1 FROM file b WHERE b.extents = a.extents AND substr(b.path, 1, length(?2)) = ?2)))\
+            """)) {
+            s.setString(1, below(dir));
+            s.setString(2, below(superset));
+            try (ResultSet rs = s.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
+    }
+
+    private static String below(Path dir) {
+        String separator = dir.getFileSystem().getSeparator();
+        return dir.toString().endsWith(separator) ? dir.toString() : dir + separator;
     }
 }

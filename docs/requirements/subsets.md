@@ -144,6 +144,7 @@ Needs: impl, utest
 `dsn~report~1`
 
 `kodf report` prints each listed directory, followed by one line `contained in <directory>` per containing directory.
+The line ends with `(already shares its data, deleting frees no space)` when the data is shared on disk.
 
 Covers:
 

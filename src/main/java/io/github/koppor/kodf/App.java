@@ -3,7 +3,7 @@
 //JAVA 27
 //DEPS info.picocli:picocli:4.7.7
 //DEPS org.xerial:sqlite-jdbc:3.54.1.0
-//SOURCES Db.java Scanner.java Subsets.java
+//SOURCES Db.java Extents.java Scanner.java Subsets.java
 //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
 
 package io.github.koppor.kodf;
@@ -69,10 +69,15 @@ public class App {
         @Override
         public Integer call() throws Exception {
             try (Connection db = Db.open(app.db)) {
-                Subsets.find(db).forEach((dir, supersets) -> {
-                    System.out.println(dir);
-                    supersets.forEach(s -> System.out.println("  contained in " + s));
-                });
+                for (var entry : Subsets.find(db).entrySet()) {
+                    System.out.println(entry.getKey());
+                    for (var superset : entry.getValue()) {
+                        System.out.println("  contained in " + superset
+                                + (Subsets.sharesData(db, entry.getKey(), superset)
+                                        ? " (already shares its data, deleting frees no space)"
+                                        : ""));
+                    }
+                }
             }
             return 0;
         }
