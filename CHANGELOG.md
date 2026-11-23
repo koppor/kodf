@@ -13,6 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 - kodf runs without installing JBang through gg.cmd: `sh ./gg.cmd jbang kodf@koppor/kodf`.
 - On btrfs, the report tells when a listed directory already shares its data with the containing one, so that deleting it frees no space.
 - On btrfs, files sharing their data with a file already read are not read again.
+- `kodf report --fdupes` lists the groups of identical files for `duperemove --fdupes -d`, which lets them share their data on btrfs or XFS.
 
 ### Fixed
 

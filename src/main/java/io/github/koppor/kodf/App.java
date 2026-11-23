@@ -3,7 +3,7 @@
 //JAVA 27
 //DEPS info.picocli:picocli:4.7.7
 //DEPS org.xerial:sqlite-jdbc:3.54.1.0
-//SOURCES Db.java Extents.java Scanner.java Subsets.java
+//SOURCES Db.java Duplicates.java Extents.java Scanner.java Subsets.java
 //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
 
 package io.github.koppor.kodf;
@@ -66,9 +66,24 @@ public class App {
         @CommandLine.ParentCommand
         App app;
 
+        // [impl->dsn~fdupes-groups~1]
+        @Option(
+                names = "--fdupes",
+                description = "Lists the groups of identical files instead, one path per line and a blank line after"
+                        + " each group, as fdupes does: `kodf report --fdupes | duperemove --fdupes -d` lets them"
+                        + " share their data on btrfs or XFS.")
+        boolean fdupes;
+
         @Override
         public Integer call() throws Exception {
             try (Connection db = Db.open(app.db)) {
+                if (fdupes) {
+                    for (var group : Duplicates.find(db)) {
+                        group.forEach(System.out::println);
+                        System.out.println();
+                    }
+                    return 0;
+                }
                 for (var entry : Subsets.find(db).entrySet()) {
                     System.out.println(entry.getKey());
                     for (var superset : entry.getValue()) {

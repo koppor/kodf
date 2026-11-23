@@ -146,4 +146,21 @@ class SubsetsTest {
         Files.delete(gone);
         assertEquals(Map.of(x, List.of(y)), scan(1, gone));
     }
+
+    // [utest->dsn~fdupes-groups~1]
+    @Test
+    void listsGroupsOfIdenticalFiles() throws Exception {
+        write("data/a/x.txt", "xxx");
+        write("data/b/x.txt", "xxx");
+        write("data/b/y.txt", "yyy");
+        write("data/c/x.txt", "xxx");
+        write("data/c/z.txt", "zzzz");
+        scan();
+        try (Connection db = Db.open(tmp.resolve("kodf.db"))) {
+            assertEquals(
+                    List.of(List.of(
+                            tmp.resolve("data/a/x.txt"), tmp.resolve("data/b/x.txt"), tmp.resolve("data/c/x.txt"))),
+                    Duplicates.find(db));
+        }
+    }
 }

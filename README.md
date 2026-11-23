@@ -67,6 +67,9 @@ Example output:
   - Two directories with the same content are both listed, each with the other.
   - On btrfs, a containing directory is marked `(already shares its data, deleting frees no space)` when the listed directory's data lies on disk only once.
 
+- `report --fdupes` lists the groups of identical files instead, in the format of fdupes, leaving out groups that already share their data.
+  [duperemove](https://github.com/markfasheh/duperemove) lets them share their data on btrfs or XFS without reading all files again: `kodf report --fdupes | duperemove --fdupes -d`.
+
 Nothing is deleted or changed; `report` only lists.
 
 ### Where the database goes
@@ -86,7 +89,6 @@ Run it as your own user; if some directories are not readable for that user, the
 ### Planned
 
 - A web page served by kodf that shows the directories as nested circles, and shared content as overlapping circles.
-- On btrfs: letting duplicates share their data instead of deleting them.
 
 The planned scope is tracked in [docs/requirements](docs/requirements/README.md), the decisions in [docs/decisions](docs/decisions/README.md).
 

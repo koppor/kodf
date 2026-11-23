@@ -82,6 +82,10 @@ class BtrfsTest {
             assertEquals(List.of(photos, reflinked), subsets.get(copied));
             assertTrue(Subsets.sharesData(db, reflinked, photos));
             assertFalse(Subsets.sharesData(db, copied, photos));
+            // [utest->dsn~fdupes-groups~1]
+            assertEquals(
+                    List.of(List.of(copied.resolve("a.jpg"), photos.resolve("a.jpg"), reflinked.resolve("a.jpg"))),
+                    Duplicates.find(db));
         }
     }
 }

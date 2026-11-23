@@ -26,6 +26,17 @@ Covers:
 
 Needs: dsn
 
+### Duplicates for duperemove
+`req~duperemove~1`
+
+The user lets duperemove dedupe the duplicates kodf found, without duperemove reading all files again.
+
+Covers:
+
+* `feat~btrfs~1`
+
+Needs: dsn
+
 ## Design
 
 ### Fingerprint of the location on disk
@@ -62,5 +73,18 @@ A listed directory shares its data with a containing directory when each file be
 Covers:
 
 * `req~shared-data~1`
+
+Needs: impl, utest
+
+### Groups of identical files in the format of fdupes
+`dsn~fdupes-groups~1`
+
+`kodf report --fdupes` prints each group of files with the same hash, one path per line and a blank line after each group, as `fdupes` does and `duperemove --fdupes` reads.
+A group is left out when all its files have the same fingerprint, as they already share their data.
+duperemove compares the bytes itself before it lets files share their data, so a file changed since the scan is not harmed.
+
+Covers:
+
+* `req~duperemove~1`
 
 Needs: impl, utest
