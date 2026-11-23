@@ -63,6 +63,14 @@ Example output:
 
 Nothing is deleted or changed; `report` only lists.
 
+### Where the database goes
+
+`kodf.db` is created in the current directory, or wherever `--db` points.
+It takes about 250 to 500 bytes per file, depending on the length of the paths: about 0.5 GB for one million files.
+During a scan, SQLite's write-ahead log (`kodf.db-wal`) can temporarily grow to a similar size.
+On a Synology NAS, keep it on a data volume (such as `--db /volume1/homes/<user>/kodf.db`), not on the small system partition, where `/root` lies.
+Keep it outside the scanned directories, otherwise it is scanned as well.
+
 ### Planned
 
 - A web page served by kodf that shows the directories as nested circles, and shared content as overlapping circles.
@@ -74,6 +82,6 @@ The planned scope is tracked in [docs/requirements](docs/requirements/README.md)
 
 - Requires nothing but a JDK to start Gradle; Gradle downloads Java 27 itself.
 - `./gradlew build` compiles, checks the formatting and runs the tests.
-- `./gradlew spotlessApply` formats the code ([Google Java Style](https://google.github.io/styleguide/javaguide.html)).
+- `./gradlew spotlessApply` formats the code with [Open Java Format](https://openjavaformat.dev/).
 - `jbang kodf ...` runs the checkout, `jbang trace` traces requirements and decisions with [OpenFastTrace](https://github.com/itsallcode/openfasttrace).
 - The Java version and the dependencies are declared in the JBang header of `App.java`; the Gradle build reads them from there.
