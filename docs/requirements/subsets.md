@@ -59,6 +59,7 @@ Needs: impl, utest
 
 A file keeps its known hash when its size and modification time are unchanged.
 Files no longer found below a scanned directory are removed from the database.
+Files below other directories stay, so that directories scanned one after the other are compared with each other.
 
 Covers:
 
@@ -109,6 +110,18 @@ Needs: impl, utest
 `kodf report` lists a directory only when none of its ancestors is listed.
 For each listed directory it names the directories containing its content of which no descendant contains it as well.
 Two directories with the same content are both listed, each with the other.
+
+Covers:
+
+* `req~subset-report~1`
+
+Needs: impl, utest
+
+### Unreadable content prevents a subset
+`dsn~unreadable-blocks-subset~1`
+
+A file or directory that cannot be read is recorded without hash, like a file of unique size.
+The directories around it therefore cannot be subsets: their content is not fully known.
 
 Covers:
 

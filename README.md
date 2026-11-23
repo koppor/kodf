@@ -56,6 +56,9 @@ Example output:
   - `--min-size BYTES` leaves out smaller files, for a faster scan of photos and videos.
     A directory may then be reported although it holds smaller files that exist nowhere else.
   - Not scanned: `@eaDir`, `#recycle`, `#snapshot` (Synology), `$RECYCLE.BIN`, `.git`.
+  - Scanning one directory after the other into the same database keeps the earlier results: `scan /volume1/photo`, later `scan /volume1/homes/koppor`, then `report` compares both.
+    Rescanning a directory replaces only its own results.
+  - Files and directories that cannot be read are reported on standard error; the directories around them are never reported as subsets, as their content is not fully known.
 - `report` lists each directory whose whole content also exists in another directory, wherever that one lies, and names that directory.
   - A directory is not listed when a directory around it is listed already.
   - Only the innermost containing directories are named.
@@ -70,6 +73,11 @@ It takes about 250 to 500 bytes per file, depending on the length of the paths: 
 During a scan, SQLite's write-ahead log (`kodf.db-wal`) can temporarily grow to a similar size.
 On a Synology NAS, keep it on a data volume (such as `--db /volume1/homes/<user>/kodf.db`), not on the small system partition, where `/root` lies.
 Keep it outside the scanned directories, otherwise it is scanned as well.
+
+### Permissions
+
+kodf needs no root rights, only read access to what it scans.
+Run it as your own user; if some directories are not readable for that user, the report skips the directories around them instead of giving a wrong answer.
 
 ### Planned
 

@@ -31,6 +31,9 @@ final class Scanner {
 
     private static final int COMMIT_EVERY = 100;
 
+    /** Size recorded for a file or directory that could not be read. */
+    static final long UNREADABLE = -1;
+
     private final Connection db;
     private final long minSize;
 
@@ -80,24 +83,32 @@ final class Scanner {
                     if (!attrs.isRegularFile() || attrs.size() < minSize) {
                         return FileVisitResult.CONTINUE;
                     }
+                    record(file, attrs.size(), attrs.lastModifiedTime().toMillis());
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                // [impl->dsn~unreadable-blocks-subset~1]
+                public FileVisitResult visitFileFailed(Path file, IOException e) {
+                    System.err.println("Cannot read " + file + ": " + e.getMessage());
+                    // A row without hash makes the directories around it unique, as their content is not
+                    // fully known.
+                    record(file, UNREADABLE, 0);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                private void record(Path file, long size, long mtime) {
                     try {
                         upsert.setString(1, file.toString());
                         upsert.setString(2, file.getParent().toString());
-                        upsert.setLong(3, attrs.size());
-                        upsert.setLong(4, attrs.lastModifiedTime().toMillis());
+                        upsert.setLong(3, size);
+                        upsert.setLong(4, mtime);
                         upsert.executeUpdate();
                         seen.setString(1, file.toString());
                         seen.executeUpdate();
                     } catch (SQLException e) {
                         throw new IllegalStateException(e);
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException e) {
-                    System.err.println("Cannot read " + file + ": " + e.getMessage());
-                    return FileVisitResult.CONTINUE;
                 }
             });
         }
@@ -121,7 +132,7 @@ final class Scanner {
         try (Statement s = db.createStatement();
                 ResultSet rs = s.executeQuery("""
                     SELECT path FROM file
-                    WHERE hash IS NULL
+                    WHERE hash IS NULL AND size > 0
                       AND size IN (SELECT size FROM file GROUP BY size HAVING count(*) > 1)\
                     """);
                 PreparedStatement update = db.prepareStatement("UPDATE file SET hash = ? WHERE path = ?")) {

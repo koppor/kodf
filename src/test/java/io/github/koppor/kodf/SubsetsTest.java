@@ -1,12 +1,15 @@
 package io.github.koppor.kodf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,8 +29,12 @@ class SubsetsTest {
     }
 
     private Map<Path, List<Path>> scan(long minSize) throws Exception {
+        return scan(minSize, tmp.resolve("data"));
+    }
+
+    private Map<Path, List<Path>> scan(long minSize, Path root) throws Exception {
         try (Connection db = Db.open(tmp.resolve("kodf.db"))) {
-            new Scanner(db, minSize).scan(List.of(tmp.resolve("data")));
+            new Scanner(db, minSize).scan(List.of(root));
             return Subsets.find(db);
         }
     }
@@ -90,5 +97,35 @@ class SubsetsTest {
 
         assertEquals(Map.of(), scan(1));
         assertEquals(Map.of(a, List.of(b), b, List.of(a)), scan(2));
+    }
+
+    // [utest->dsn~incremental-rescan~1]
+    @Test
+    void scanOfAnotherDirectoryKeepsEarlierResults() throws Exception {
+        write("data/photo/x.jpg", "xxx");
+        write("data/home/koppor/copy-of-x.jpg", "xxx");
+        write("data/home/koppor/y.jpg", "yyyy");
+
+        scan(1, tmp.resolve("data/photo"));
+        assertEquals(
+                Map.of(tmp.resolve("data/photo"), List.of(tmp.resolve("data/home/koppor"))),
+                scan(1, tmp.resolve("data/home/koppor")));
+    }
+
+    // [utest->dsn~unreadable-blocks-subset~1]
+    @Test
+    void unreadableDirectoryPreventsSubset() throws Exception {
+        write("data/a/x.txt", "xxx");
+        write("data/a/secret/s.txt", "sss");
+        write("data/b/x.txt", "xxx");
+        Path secret = tmp.resolve("data/a/secret");
+        Files.setPosixFilePermissions(secret, Set.of());
+        try {
+            // root reads it anyway
+            assumeFalse(Files.isReadable(secret));
+            assertEquals(Map.of(tmp.resolve("data/b"), List.of(tmp.resolve("data/a"))), scan());
+        } finally {
+            Files.setPosixFilePermissions(secret, PosixFilePermissions.fromString("rwx------"));
+        }
     }
 }
