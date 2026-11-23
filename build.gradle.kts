@@ -1,6 +1,9 @@
 plugins {
     application
     id("com.diffplug.spotless") version "8.12.0"
+    // [impl->adr~open-java-format~1]
+    // Adds its formatter as a step of Spotless's java format.
+    id("dev.openjavaformat.java-format") version "21.0.2"
 }
 
 group = "io.github.koppor"
@@ -40,9 +43,5 @@ tasks.test {
 }
 
 spotless {
-    java {
-        // The JBang header of App.java must keep its `//DEPS` form.
-        toggleOffOn()
-        googleJavaFormat("2.0.0")
-    }
+    java {}
 }
