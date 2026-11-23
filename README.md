@@ -30,6 +30,16 @@ jbang kodf@koppor/kodf scan /volume1/backups /volume1/to-sort
 jbang kodf@koppor/kodf report
 ```
 
+Without installing JBang, [gg.cmd](https://github.com/eirikb/gg) brings it along (one file for Linux, macOS and Windows):
+
+```terminal
+curl -L ggcmd.io > gg.cmd
+sh ./gg.cmd jbang kodf@koppor/kodf scan /volume1/backups /volume1/to-sort
+sh ./gg.cmd jbang kodf@koppor/kodf report
+```
+
+On first use, JBang asks whether to trust `https://github.com/koppor/kodf/`.
+
 Example output:
 
 ```text
