@@ -9,6 +9,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 ### Added
 
+- Each daily release is published as a GitHub release with its section of the changelog.
 - kodf runs without installing JBang through gg.cmd: `sh ./gg.cmd jbang kodf@koppor/kodf`.
 
 ## [2026-11-22] - 2026-11-22
