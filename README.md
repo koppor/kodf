@@ -19,6 +19,7 @@ Finds duplicate files in different directories.
 ### Other tools
 
 - [fdupes](https://github.com/adrianlopezroche/fdupes) - very prominent tool maintained since 1999.
+- [duperemove](https://github.com/markfasheh/duperemove) - lets duplicate files and blocks on btrfs and XFS share their data; does not tell which directories can be deleted.
 
 ## Usage
 
