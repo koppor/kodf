@@ -2,7 +2,7 @@ name: Daily release
 
 # Every morning: merge experimental into main and, when CHANGELOG.md has an
 # [Unreleased] section, turn it into the CalVer release of the previous day,
-# the day the changes were made.
+# the day the changes were made, with a GitHub release showing that section.
 # [impl->adr~calver-changelog~1]
 on:
   schedule:
@@ -28,6 +28,8 @@ jobs:
       - uses: jbangdev/setup-jbang@2b1b465a7b75f4222b81426f23a01e013aa7b95c # v0.1.1
 
       - name: Release, merge, tag
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
@@ -62,4 +64,7 @@ jobs:
           if [ -n "$tag" ]; then
             git tag "$tag" main
             git push origin "$tag"
+            # The release shows the section of the changelog, without its heading.
+            jbang heylogs@nbbrd extract --batch -r "$d" CHANGELOG.md | tail -n +2 > "$RUNNER_TEMP/notes.md"
+            gh release create "$tag" --title "$d" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
           fi

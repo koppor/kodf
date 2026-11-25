@@ -2,6 +2,7 @@ package io.github.koppor.kodf;
 
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -20,72 +21,92 @@ import java.util.TreeMap;
  */
 final class Subsets {
 
-  private Subsets() {}
+    private Subsets() {}
 
-  /**
-   * Maps each such directory to the smallest directories containing all of its content. A directory
-   * is left out when one of its ancestors is reported already.
-   */
-  // [impl->dsn~subset-anywhere~1]
-  // [impl->dsn~outermost-subset-smallest-superset~1]
-  static Map<Path, List<Path>> find(Connection db) throws SQLException {
-    // ponytail: every file's hash is added to all its ancestors, memory is files × depth; switch
-    // to a bottom-up merge in SQL if a NAS scan does not fit in the heap.
-    Map<Path, Set<String>> contents = new HashMap<>();
-    Map<String, Set<Path>> holders = new HashMap<>();
-    // A file nobody else has the size of was not hashed: its directories cannot be subsets.
-    Set<Path> unique = new HashSet<>();
-    try (Statement s = db.createStatement();
-        ResultSet rs = s.executeQuery("SELECT dir, hash FROM file")) {
-      while (rs.next()) {
-        String hash = rs.getString(2);
-        for (Path p = Path.of(rs.getString(1)); p != null; p = p.getParent()) {
-          if (hash == null) {
-            unique.add(p);
-          } else {
-            contents.computeIfAbsent(p, _ -> new HashSet<>()).add(hash);
-            holders.computeIfAbsent(hash, _ -> new HashSet<>()).add(p);
-          }
+    /**
+     * Maps each such directory to the smallest directories containing all of its content. A directory
+     * is left out when one of its ancestors is reported already.
+     */
+    // [impl->dsn~subset-anywhere~1]
+    // [impl->dsn~outermost-subset-smallest-superset~1]
+    static Map<Path, List<Path>> find(Connection db) throws SQLException {
+        // ponytail: every file's hash is added to all its ancestors, memory is files × depth; switch
+        // to a bottom-up merge in SQL if a NAS scan does not fit in the heap.
+        Map<Path, Set<String>> contents = new HashMap<>();
+        Map<String, Set<Path>> holders = new HashMap<>();
+        // A file nobody else has the size of was not hashed: its directories cannot be subsets.
+        Set<Path> unique = new HashSet<>();
+        try (Statement s = db.createStatement();
+                ResultSet rs = s.executeQuery("SELECT dir, hash FROM file")) {
+            while (rs.next()) {
+                String hash = rs.getString(2);
+                for (Path p = Path.of(rs.getString(1)); p != null; p = p.getParent()) {
+                    if (hash == null) {
+                        unique.add(p);
+                    } else {
+                        contents.computeIfAbsent(p, _ -> new HashSet<>()).add(hash);
+                        holders.computeIfAbsent(hash, _ -> new HashSet<>()).add(p);
+                    }
+                }
+            }
         }
-      }
+
+        Map<Path, List<Path>> result = new TreeMap<>();
+        contents.forEach((dir, hashes) -> {
+            if (unique.contains(dir)) {
+                return;
+            }
+            List<String> rarestFirst = new ArrayList<>(hashes);
+            rarestFirst.sort(Comparator.comparingInt(h -> holders.get(h).size()));
+            Set<Path> candidates = new HashSet<>(holders.get(rarestFirst.getFirst()));
+            // Ancestors and descendants trivially share the content; deleting one would delete both.
+            candidates.removeIf(c -> c.startsWith(dir) || dir.startsWith(c));
+            for (String h : rarestFirst) {
+                if (candidates.isEmpty()) {
+                    return;
+                }
+                candidates.retainAll(holders.get(h));
+            }
+            List<Path> smallest = candidates.stream()
+                    .filter(c -> candidates.stream().noneMatch(o -> o != c && o.startsWith(c)))
+                    .sorted()
+                    .toList();
+            if (!smallest.isEmpty()) {
+                result.put(dir, smallest);
+            }
+        });
+        Set<Path> reported = Set.copyOf(result.keySet());
+        result.keySet().removeIf(dir -> {
+            for (Path p = dir.getParent(); p != null; p = p.getParent()) {
+                if (reported.contains(p)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        return result;
     }
 
-    Map<Path, List<Path>> result = new TreeMap<>();
-    contents.forEach((dir, hashes) -> {
-      if (unique.contains(dir)) {
-        return;
-      }
-      List<String> rarestFirst = new ArrayList<>(hashes);
-      rarestFirst.sort(Comparator.comparingInt(h -> holders.get(h).size()));
-      Set<Path> candidates = new HashSet<>(holders.get(rarestFirst.getFirst()));
-      // Ancestors and descendants trivially share the content; deleting one would delete both.
-      candidates.removeIf(c -> c.startsWith(dir) || dir.startsWith(c));
-      for (String h : rarestFirst) {
-        if (candidates.isEmpty()) {
-          return;
-        }
-        candidates.retainAll(holders.get(h));
-      }
-      List<Path> smallest =
-          candidates.stream()
-              .filter(c -> candidates.stream().noneMatch(o -> o != c && o.startsWith(c)))
-              .sorted()
-              .toList();
-      if (!smallest.isEmpty()) {
-        result.put(dir, smallest);
-      }
-    });
-    Set<Path> reported = Set.copyOf(result.keySet());
-    result
-        .keySet()
-        .removeIf(dir -> {
-          for (Path p = dir.getParent(); p != null; p = p.getParent()) {
-            if (reported.contains(p)) {
-              return true;
+    // [impl->dsn~shared-data-report~1]
+    /** Whether every file below {@code dir} shares its data on disk with a file below {@code superset}. */
+    static boolean sharesData(Connection db, Path dir, Path superset) throws SQLException {
+        try (PreparedStatement s = db.prepareStatement("""
+            SELECT NOT EXISTS (
+              SELECT 1 FROM file a
+              WHERE substr(a.path, 1, length(?1)) = ?1
+                AND (a.extents IS NULL OR NOT EXISTS (
+                  SELECT 1 FROM file b WHERE b.extents = a.extents AND substr(b.path, 1, length(?2)) = ?2)))\
+            """)) {
+            s.setString(1, below(dir));
+            s.setString(2, below(superset));
+            try (ResultSet rs = s.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
             }
-          }
-          return false;
-        });
-    return result;
-  }
+        }
+    }
+
+    private static String below(Path dir) {
+        String separator = dir.getFileSystem().getSeparator();
+        return dir.toString().endsWith(separator) ? dir.toString() : dir + separator;
+    }
 }

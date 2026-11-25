@@ -21,4 +21,6 @@ Directories sharing content are shown as overlapping circles, a directory contai
 `feat~btrfs~1`
 
 On btrfs, kodf recognizes files that already share their data on disk without reading them.
-Instead of deleting a duplicate, the user can let both files share their data, so that it takes up disk space only once.
+It hands the other duplicates to [duperemove](https://github.com/markfasheh/duperemove), which lets them share their data, so that it takes up disk space only once.
+
+Needs: req
