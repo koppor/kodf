@@ -90,19 +90,29 @@ final class Subsets {
     // [impl->dsn~shared-data-report~1]
     /** Whether every file below {@code dir} shares its data on disk with a file below {@code superset}. */
     static boolean sharesData(Connection db, Path dir, Path superset) throws SQLException {
+        // Path ranges instead of prefix comparisons, so that SQLite uses the primary key index.
         try (PreparedStatement s = db.prepareStatement("""
             SELECT NOT EXISTS (
               SELECT 1 FROM file a
-              WHERE substr(a.path, 1, length(?1)) = ?1
+              WHERE a.path >= ?1 AND a.path < ?2
                 AND (a.extents IS NULL OR NOT EXISTS (
-                  SELECT 1 FROM file b WHERE b.extents = a.extents AND substr(b.path, 1, length(?2)) = ?2)))\
+                  SELECT 1 FROM file b WHERE b.extents = a.extents AND b.path >= ?3 AND b.path < ?4)))\
             """)) {
-            s.setString(1, below(dir));
-            s.setString(2, below(superset));
+            String inDir = below(dir);
+            String inSuperset = below(superset);
+            s.setString(1, inDir);
+            s.setString(2, after(inDir));
+            s.setString(3, inSuperset);
+            s.setString(4, after(inSuperset));
             try (ResultSet rs = s.executeQuery()) {
                 return rs.next() && rs.getBoolean(1);
             }
         }
+    }
+
+    /** The smallest string greater than all strings starting with {@code prefix}. */
+    private static String after(String prefix) {
+        return prefix.substring(0, prefix.length() - 1) + (char) (prefix.charAt(prefix.length() - 1) + 1);
     }
 
     private static String below(Path dir) {

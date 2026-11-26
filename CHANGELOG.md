@@ -15,6 +15,10 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - Of files sharing their size, only those whose first 64 KiB are equal as well are read fully, so a scan reads less.
 
+### Fixed
+
+- `kodf report` no longer takes hours on a large scan: checking whether a directory already shares its data read the whole database once per reported directory.
+
 ## [2026-11-24] - 2026-11-24
 
 ### Added
