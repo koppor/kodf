@@ -7,6 +7,10 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 ## [Unreleased]
 
+### Added
+
+- `kodf serve` shows the scanned directories as circles in the browser, with the directories whose content exists elsewhere highlighted.
+
 ### Changed
 
 - Of files sharing their size, only those whose first 64 KiB are equal as well are read fully, so a scan reads less.

@@ -3,11 +3,14 @@
 //JAVA 27
 //DEPS info.picocli:picocli:4.7.7
 //DEPS org.xerial:sqlite-jdbc:3.54.1.0
-//SOURCES Db.java Duplicates.java Extents.java Scanner.java Subsets.java
+//DEPS org.webjars.npm:d3:7.9.2
+//SOURCES Db.java Duplicates.java Extents.java Scanner.java Serve.java Subsets.java
+//FILES io/github/koppor/kodf/viewer.html=../../../../../resources/io/github/koppor/kodf/viewer.html
 //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
 
 package io.github.koppor.kodf;
 
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.List;
@@ -21,7 +24,7 @@ import picocli.CommandLine.Parameters;
         name = "kodf",
         mixinStandardHelpOptions = true,
         description = "Finds directories whose content exists elsewhere.",
-        subcommands = {App.Scan.class, App.Report.class})
+        subcommands = {App.Scan.class, App.Report.class, App.Serve.class})
 public class App {
 
     @Option(
@@ -94,6 +97,30 @@ public class App {
                     }
                 }
             }
+            return 0;
+        }
+    }
+
+    @Command(name = "serve", description = "Shows the scan results as a web page.")
+    static class Serve implements Callable<Integer> {
+        @CommandLine.ParentCommand
+        App app;
+
+        @Option(names = "--port", defaultValue = "8080", description = "Port to listen on (default: ${DEFAULT-VALUE})")
+        int port;
+
+        @Option(
+                names = "--address",
+                defaultValue = "127.0.0.1",
+                description = "Address to listen on (default: ${DEFAULT-VALUE}, only this machine). 0.0.0.0 lets every"
+                        + " machine in the network see the directory names.")
+        String address;
+
+        @Override
+        public Integer call() throws Exception {
+            io.github.koppor.kodf.Serve.start(app.db, new InetSocketAddress(address, port));
+            System.out.println("Serving http://" + address + ":" + port + "/, stop with Ctrl+C");
+            Thread.currentThread().join();
             return 0;
         }
     }

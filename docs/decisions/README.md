@@ -12,6 +12,7 @@ Architectural decisions are recorded as [Markdown Architectural Decision Records
 | [0005](0005-viewer-as-a-web-page-served-by-kodf.md) | Viewer as a web page served by kodf |
 | [0006](0006-run-with-jbang.md) | Run with JBang |
 | [0007](0007-format-with-open-java-format.md) | Format with Open Java Format |
+| [0008](0008-javascript-libraries-as-webjars.md) | JavaScript libraries as WebJars |
 
 ## Conventions
 

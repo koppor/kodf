@@ -1,0 +1,117 @@
+<!doctype html>
+<!-- [impl->dsn~circle-packing~1] -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>kodf</title>
+  <style>
+    body { margin: 0; height: 100vh; display: flex; font: 14px system-ui, sans-serif; }
+    svg { flex: 1; cursor: zoom-out; }
+    circle { cursor: pointer; stroke: #0002; }
+    circle.subset { fill: #e8743b; }
+    circle.selected { stroke: #000; stroke-width: 2px; }
+    circle.superset { stroke: #1f6fd1; stroke-width: 4px; }
+    aside { width: 24em; padding: 1em; overflow: auto; border-left: 1px solid #ccc; }
+    code { word-break: break-all; }
+    button { background: none; border: none; padding: 0; font: inherit; text-align: left; color: #1f6fd1; cursor: pointer; text-decoration: underline; word-break: break-all; }
+    .swatch { display: inline-block; width: 1em; height: 1em; vertical-align: middle; }
+  </style>
+</head>
+<body>
+<svg></svg>
+<aside>
+  <p>Each circle is a directory, sized by its content.
+    Click a circle to zoom in and see its details, click the background to zoom out.</p>
+  <p><span class="swatch" style="background:#e8743b"></span> Its whole content exists in another directory.
+    The containing directories are outlined in <span style="color:#1f6fd1">blue</span> once you click it.</p>
+  <div id="info"></div>
+</aside>
+<script src="d3.min.js"></script>
+<script type="module">
+  const data = await (await fetch("data.json")).json();
+  const subsets = new Map(Object.entries(data.subsets));
+
+  // Directories without files of their own, such as /volume1, are created as parents by path().
+  let root = d3.stratify().path(d => d[0])(data.dirs)
+      .sum(d => d ? d[1] : 0)
+      .sort((a, b) => b.value - a.value);
+  // Start at the first directory with more than one subdirectory, not at an empty chain such as /volume1.
+  while (root.children?.length === 1 && !root.data) {
+    root = root.children[0];
+  }
+  const byId = new Map(root.descendants().map(d => [d.id, d]));
+
+  const svg = d3.select("svg");
+  const {width, height} = svg.node().getBoundingClientRect();
+  const size = Math.min(width, height);
+  d3.pack().size([size, size]).padding(2)(root);
+  svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+  const color = d3.scaleLinear().domain([0, 6]).range(["#eef3f8", "#7d8fa6"]).interpolate(d3.interpolateHcl);
+  const bytes = d3.format(".3~s");
+
+  // ponytail: one SVG circle per directory; switch to canvas if a NAS tree makes zooming slow.
+  const node = svg.append("g").selectAll("circle")
+      .data(root.descendants())
+      .join("circle")
+      .classed("subset", d => subsets.has(d.id))
+      .attr("fill", d => d.children ? color(d.depth) : "#fff")
+      .on("click", (event, d) => {
+        event.stopPropagation();
+        select(d);
+      });
+  node.append("title").text(d => `${d.id}\n${bytes(d.value)}B`);
+
+  const label = svg.append("g")
+      .attr("pointer-events", "none")
+      .attr("text-anchor", "middle")
+      .selectAll("text")
+      .data(root.descendants())
+      .join("text")
+      .text(d => d.id.slice(d.id.lastIndexOf("/") + 1));
+
+  let focus = root;
+  let view;
+  zoomTo([root.x, root.y, root.r * 2]);
+  showLabels();
+  svg.on("click", () => zoom(focus === root ? root : focus.parent));
+
+  function showLabels() {
+    label.style("display", d => d.parent === focus ? null : "none");
+  }
+
+  function zoomTo(v) {
+    const k = size / v[2];
+    view = v;
+    node.attr("transform", d => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`)
+        .attr("r", d => d.r * k);
+    label.attr("transform", d => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
+  }
+
+  function zoom(d) {
+    focus = d;
+    showLabels();
+    svg.transition().duration(600).tween("zoom", () => {
+      const i = d3.interpolateZoom(view, [d.x, d.y, d.r * 2]);
+      return t => zoomTo(i(t));
+    });
+  }
+
+  function select(d) {
+    zoom(d.children ? d : d.parent);
+    const supersets = subsets.get(d.id) ?? [];
+    node.classed("selected", n => n === d).classed("superset", n => supersets.includes(n.id));
+
+    // Paths come from the file system: they are set as text, never as HTML.
+    const info = d3.select("#info").html("");
+    info.append("h3").append("code").text(d.id);
+    info.append("p").text(`${bytes(d.value)}B`);
+    if (supersets.length) {
+      info.append("p").text("Its whole content also exists in:");
+      info.append("ul").selectAll("li").data(supersets).join("li")
+          .append("button").text(s => s).on("click", (_, s) => select(byId.get(s)));
+    }
+  }
+</script>
+</body>
+</html>
