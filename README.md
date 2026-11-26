@@ -97,6 +97,7 @@ The planned scope is tracked in [docs/requirements](docs/requirements/README.md)
 
 - Requires nothing but a JDK to start Gradle; Gradle downloads Java 27 itself.
 - `./gradlew build` compiles, checks the formatting and runs the tests.
+- `./benchmark.sh DIR` times fdupes and kodf on the same directory; run it as root so that each run starts with an empty page cache.
 - `./test-on-btrfs.sh` runs the btrfs tests in a privileged Docker container on a btrfs image file; neither btrfs nor root is needed on the host.
 - `./gradlew spotlessApply` formats the code with [Open Java Format](https://openjavaformat.dev/).
 - `jbang kodf ...` runs the checkout, `jbang trace` traces requirements and decisions with [OpenFastTrace](https://github.com/itsallcode/openfasttrace).
