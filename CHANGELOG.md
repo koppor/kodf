@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
+## [Unreleased]
+
+### Changed
+
+- Of files sharing their size, only those whose first 64 KiB are equal as well are read fully, so a scan reads less.
+
 ## [2026-11-24] - 2026-11-24
 
 ### Added
@@ -34,5 +40,6 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - The previous prototype with its hard-coded scan path.
 
+[Unreleased]: https://github.com/koppor/kodf/compare/v2026-11-24...HEAD
 [2026-11-24]: https://github.com/koppor/kodf/compare/v2026-11-22...v2026-11-24
 [2026-11-22]: https://github.com/koppor/kodf/releases/tag/v2026-11-22

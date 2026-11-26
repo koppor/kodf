@@ -52,6 +52,7 @@ Example output:
 
 - `scan DIR...` records every file below the given directories in `kodf.db`, an SQLite database (choose another file with `--db`).
   - Only files that share their size with another file are read and hashed (SHA-256); a file of unique size cannot have a duplicate.
+    Of larger files, the first 64 KiB are compared first: a file differing there is not read fully.
   - A rescan reads only files whose size or modification time changed, and forgets files that are gone.
   - Empty files are not recorded.
   - `--min-size BYTES` leaves out smaller files, for a faster scan of photos and videos.
@@ -76,7 +77,7 @@ Nothing is deleted or changed; `report` only lists.
 
 `kodf.db` is created in the current directory, or wherever `--db` points.
 It takes about 250 to 500 bytes per file, depending on the length of the paths: about 0.5 GB for one million files.
-Files that are hashed take about 150 bytes more.
+Files that share their size with another file take about 250 bytes more.
 During a scan, SQLite's write-ahead log (`kodf.db-wal`) can temporarily grow to a similar size.
 On a Synology NAS, keep it on a data volume (such as `--db /volume1/homes/<user>/kodf.db`), not on the small system partition, where `/root` lies.
 Keep it outside the scanned directories, otherwise it is scanned as well.
