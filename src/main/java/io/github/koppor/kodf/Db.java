@@ -6,9 +6,11 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 // [impl->dsn~sqlite-index~1]
-/** The scan results: one row per regular file, with its content hash once it is known and
+/** The scan results: one row per regular file, with its content hash once it is known, the
+ * hash of its first {@link Scanner#HEAD} bytes and
  * the {@link Extents#fingerprint fingerprint} of where its data lies on disk. */
 final class Db {
 
@@ -25,13 +27,17 @@ final class Db {
                   size  INTEGER NOT NULL,
                   mtime INTEGER NOT NULL,
                   hash  TEXT,
-                  extents TEXT
+                  extents TEXT,
+                  head  TEXT
                 )\
                 """);
-            // Databases written before the extents were recorded.
-            try (ResultSet rs = s.executeQuery("SELECT 1 FROM pragma_table_info('file') WHERE name = 'extents'")) {
-                if (!rs.next()) {
-                    s.execute("ALTER TABLE file ADD COLUMN extents TEXT");
+            // Databases written before these columns were added.
+            for (String column : List.of("extents", "head")) {
+                try (ResultSet rs =
+                        s.executeQuery("SELECT 1 FROM pragma_table_info('file') WHERE name = '" + column + "'")) {
+                    if (!rs.next()) {
+                        s.execute("ALTER TABLE file ADD COLUMN " + column + " TEXT");
+                    }
                 }
             }
             s.execute("CREATE INDEX IF NOT EXISTS file_size ON file(size)");

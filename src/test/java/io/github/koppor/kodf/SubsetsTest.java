@@ -163,4 +163,26 @@ class SubsetsTest {
                     Duplicates.find(db));
         }
     }
+
+    // [utest->dsn~head-hash~1]
+    @Test
+    void fileDifferingAtItsStartIsNotHashed() throws Exception {
+        byte[] content = new byte[Scanner.HEAD + 1000];
+        Files.createDirectories(tmp.resolve("data"));
+        Files.write(tmp.resolve("data/a"), content);
+        content[content.length - 1] = 1;
+        Files.write(tmp.resolve("data/b"), content);
+        content[0] = 1;
+        Files.write(tmp.resolve("data/c"), content);
+        scan();
+        try (Connection db = Db.open(tmp.resolve("kodf.db"));
+                var rs = db.createStatement().executeQuery("SELECT path, hash IS NOT NULL FROM file ORDER BY path")) {
+            Map<String, Boolean> hashed = new java.util.TreeMap<>();
+            while (rs.next()) {
+                hashed.put(Path.of(rs.getString(1)).getFileName().toString(), rs.getBoolean(2));
+            }
+            // a and b differ only at their end, so both are read fully.
+            assertEquals(Map.of("a", true, "b", true, "c", false), hashed);
+        }
+    }
 }

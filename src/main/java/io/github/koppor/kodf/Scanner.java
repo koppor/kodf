@@ -2,7 +2,6 @@ package io.github.koppor.kodf;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +20,8 @@ import java.util.Set;
 
 /**
  * Records all files below the given roots and hashes those whose size is shared with another file:
- * a file with a unique size cannot have a duplicate, so it is never read.
+ * a file with a unique size cannot have a duplicate, so it is never read. Of a larger file, the first
+ * {@link #HEAD} bytes are compared first, so that a file differing at its start is not read fully.
  */
 final class Scanner {
 
@@ -30,6 +30,9 @@ final class Scanner {
     static final Set<String> IGNORED = Set.of("@eaDir", "#recycle", "#snapshot", "$RECYCLE.BIN", ".git");
 
     private static final int COMMIT_EVERY = 100;
+
+    /** Files of the same size are read fully only when their first bytes are equal. */
+    static final int HEAD = 64 * 1024;
 
     /** Size recorded for a file or directory that could not be read. */
     static final long UNREADABLE = -1;
@@ -53,6 +56,7 @@ final class Scanner {
             collect(root.toAbsolutePath().normalize());
         }
         db.commit();
+        hashHeads();
         hash();
         db.setAutoCommit(true);
     }
@@ -75,6 +79,8 @@ final class Scanner {
                      THEN hash END,
               extents = CASE WHEN size = excluded.size AND mtime = excluded.mtime
                         THEN extents END,
+              head = CASE WHEN size = excluded.size AND mtime = excluded.mtime
+                     THEN head END,
               size = excluded.size, mtime = excluded.mtime\
             """);
                 PreparedStatement seen = db.prepareStatement("INSERT OR IGNORE INTO seen VALUES (?)")) {
@@ -137,6 +143,35 @@ final class Scanner {
         }
     }
 
+    // [impl->dsn~head-hash~1]
+    private void hashHeads() throws SQLException {
+        try (Statement s = db.createStatement();
+                ResultSet rs = s.executeQuery("""
+                    SELECT path FROM file
+                    WHERE head IS NULL AND size > %d
+                      AND size IN (SELECT size FROM file GROUP BY size HAVING count(*) > 1)\
+                    """.formatted(HEAD));
+                PreparedStatement update = db.prepareStatement("UPDATE file SET head = ? WHERE path = ?")) {
+            int pending = 0;
+            while (rs.next()) {
+                String path = rs.getString(1);
+                try (InputStream in = Files.newInputStream(Path.of(path))) {
+                    update.setString(1, HexFormat.of().formatHex(digest().digest(in.readNBytes(HEAD))));
+                } catch (IOException e) {
+                    System.err.println("Cannot read " + path + ": " + e.getMessage());
+                    continue;
+                }
+                update.setString(2, path);
+                update.executeUpdate();
+                if (++pending == COMMIT_EVERY) {
+                    db.commit();
+                    pending = 0;
+                }
+            }
+        }
+        db.commit();
+    }
+
     // [impl->dsn~hash-size-collisions~1]
     // [impl->dsn~shared-data-not-read~1]
     // ponytail: the extents of a file with known hash are not read again, so a dedupe by another tool is
@@ -146,8 +181,10 @@ final class Scanner {
                 ResultSet rs = s.executeQuery("""
                     SELECT path, size, hash FROM file
                     WHERE (hash IS NULL OR extents IS NULL) AND size > 0
-                      AND size IN (SELECT size FROM file GROUP BY size HAVING count(*) > 1)\
-                    """);
+                      AND size IN (SELECT size FROM file GROUP BY size HAVING count(*) > 1)
+                      AND (size <= %d OR (size, head) IN (
+                        SELECT size, head FROM file WHERE head IS NOT NULL GROUP BY size, head HAVING count(*) > 1))\
+                    """.formatted(HEAD));
                 PreparedStatement sharing = db.prepareStatement("""
                     SELECT hash FROM file WHERE extents = ? AND size = ? AND hash IS NOT NULL LIMIT 1\
                     """);
@@ -188,14 +225,20 @@ final class Scanner {
 
     static String sha256(Path file) throws IOException {
         try (InputStream in = Files.newInputStream(file)) {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = digest();
             byte[] buffer = new byte[1 << 16];
             for (int n; (n = in.read(buffer)) > 0; ) {
                 digest.update(buffer, 0, n);
             }
             return HexFormat.of().formatHex(digest.digest());
+        }
+    }
+
+    private static MessageDigest digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            throw new UncheckedIOException(new IOException(e));
+            throw new IllegalStateException(e);
         }
     }
 }

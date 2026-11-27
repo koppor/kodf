@@ -52,6 +52,7 @@ Example output:
 
 - `scan DIR...` records every file below the given directories in `kodf.db`, an SQLite database (choose another file with `--db`).
   - Only files that share their size with another file are read and hashed (SHA-256); a file of unique size cannot have a duplicate.
+    Of larger files, the first 64 KiB are compared first: a file differing there is not read fully.
   - A rescan reads only files whose size or modification time changed, and forgets files that are gone.
   - Empty files are not recorded.
   - `--min-size BYTES` leaves out smaller files, for a faster scan of photos and videos.
@@ -70,13 +71,18 @@ Example output:
 - `report --fdupes` lists the groups of identical files instead, in the format of fdupes, leaving out groups that already share their data.
   [duperemove](https://github.com/markfasheh/duperemove) lets them share their data on btrfs or XFS without reading all files again: `kodf report --fdupes | duperemove --fdupes -d`.
 
-Nothing is deleted or changed; `report` only lists.
+- `serve` shows the results as a web page at <http://127.0.0.1:8080/> (`--port`, `--address`): each directory is a circle, sized by its content and nested in its parent.
+  Directories whose whole content exists elsewhere are orange; clicking one zooms in and outlines the directories holding its content in blue.
+  The page needs no internet access.
+  By default only the machine running kodf can open it: on the NAS, either forward the port (`ssh -L 8080:localhost:8080 nas`) or pass `--address 0.0.0.0`, which lets every machine in the network see the directory names.
+
+Nothing is deleted or changed; `report` and `serve` only show.
 
 ### Where the database goes
 
 `kodf.db` is created in the current directory, or wherever `--db` points.
 It takes about 250 to 500 bytes per file, depending on the length of the paths: about 0.5 GB for one million files.
-Files that are hashed take about 150 bytes more.
+Files that share their size with another file take about 250 bytes more.
 During a scan, SQLite's write-ahead log (`kodf.db-wal`) can temporarily grow to a similar size.
 On a Synology NAS, keep it on a data volume (such as `--db /volume1/homes/<user>/kodf.db`), not on the small system partition, where `/root` lies.
 Keep it outside the scanned directories, otherwise it is scanned as well.
@@ -88,7 +94,7 @@ Run it as your own user; if some directories are not readable for that user, the
 
 ### Planned
 
-- A web page served by kodf that shows the directories as nested circles, and shared content as overlapping circles.
+- In the web page: overlapping circles for directories sharing part of their content.
 
 The planned scope is tracked in [docs/requirements](docs/requirements/README.md), the decisions in [docs/decisions](docs/decisions/README.md).
 
@@ -96,6 +102,7 @@ The planned scope is tracked in [docs/requirements](docs/requirements/README.md)
 
 - Requires nothing but a JDK to start Gradle; Gradle downloads Java 27 itself.
 - `./gradlew build` compiles, checks the formatting and runs the tests.
+- `./benchmark.sh DIR` times fdupes and kodf on the same directory; run it as root so that each run starts with an empty page cache.
 - `./test-on-btrfs.sh` runs the btrfs tests in a privileged Docker container on a btrfs image file; neither btrfs nor root is needed on the host.
 - `./gradlew spotlessApply` formats the code with [Open Java Format](https://openjavaformat.dev/).
 - `jbang kodf ...` runs the checkout, `jbang trace` traces requirements and decisions with [OpenFastTrace](https://github.com/itsallcode/openfasttrace).

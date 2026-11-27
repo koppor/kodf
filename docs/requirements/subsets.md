@@ -91,6 +91,19 @@ Covers:
 
 Needs: impl, utest
 
+### Compare the start first
+`dsn~head-hash~1`
+
+Of files larger than 64 KiB sharing their size, the SHA-256 of the first 64 KiB is recorded first.
+Only files whose size and first 64 KiB are both shared with another file are read fully.
+The others have no hash, like a file of unique size.
+
+Covers:
+
+* `req~scan~1`
+
+Needs: impl, utest
+
 ### Ignored directories
 `dsn~ignored-directories~1`
 

@@ -8,6 +8,8 @@ decision-makers: Oliver Kopp
 
 `adr~web-viewer~1`
 
+Needs: dsn
+
 ## Context and Problem Statement
 
 Which directory is contained in which is best seen as a picture: circles nested by size, and overlapping circles for directories sharing content (Euler diagrams).

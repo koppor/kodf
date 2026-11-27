@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/) with the scheme `YYYY-0M-0D`.
 
+## [2026-11-26] - 2026-11-26
+
+### Added
+
+- `kodf serve` shows the scanned directories as circles in the browser, with the directories whose content exists elsewhere highlighted.
+
+### Changed
+
+- Of files sharing their size, only those whose first 64 KiB are equal as well are read fully, so a scan reads less.
+
+### Fixed
+
+- `kodf report` no longer takes hours on a large scan: checking whether a directory already shares its data read the whole database once per reported directory.
+
 ## [2026-11-24] - 2026-11-24
 
 ### Added
@@ -34,5 +48,6 @@ and this project adheres to [Calendar Versioning](https://calver.org/) with the 
 
 - The previous prototype with its hard-coded scan path.
 
+[2026-11-26]: https://github.com/koppor/kodf/compare/v2026-11-24...v2026-11-26
 [2026-11-24]: https://github.com/koppor/kodf/compare/v2026-11-22...v2026-11-24
 [2026-11-22]: https://github.com/koppor/kodf/releases/tag/v2026-11-22
